@@ -7,7 +7,6 @@ repository.workspace = true
 license.workspace = true
 authors.workspace = true
 
-exclude = ["./tests"]
 
 [dependencies]
 serde_json = { version = ">=1", optional = true }
