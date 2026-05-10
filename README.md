@@ -1,6 +1,6 @@
 # Mirl Codec Info (0.0.0-alpha)
 
-#### Mici - Parse and Marshal come codecs but retain metadata about the parsed values
+#### Mici - Parse and Marshal come codecs while retaining metadata about the parsed values
 
 <details>
 <summary>Flags</summary>
