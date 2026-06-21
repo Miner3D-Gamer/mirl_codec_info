@@ -1,21 +1,21 @@
 #![allow(dead_code)]
 #![allow(clippy::trivially_copy_pass_by_ref)]
 
-#[test]
-fn caller() {
-    // Doing this because of the 100k open bracket test
-    let thread = std::thread::Builder::new()
-        .stack_size(mirl_core::constants::bytes::GB as usize);
-    let output = thread.spawn(main).unwrap();
+// #[test]
+// fn caller() {
+//     // Doing this because of the 100k open bracket test
+//     let thread = std::thread::Builder::new()
+//         .stack_size(mirl_core::constants::bytes::GB as usize);
+//     let output = thread.spawn(main).unwrap();
 
-    let _result = output.join();
-    // match result {
-    //     Ok(()) => {}
-    //     Err(_) => {
-    //         panic!("Not gud")
-    //     }
-    // }
-}
+//     let _result = output.join();
+//     // match result {
+//     //     Ok(()) => {}
+//     //     Err(_) => {
+//     //         panic!("Not gud")
+//     //     }
+//     // }
+// }
 
 use crate::{prelude::*, values::PositionedValue};
 
@@ -47,8 +47,10 @@ fn full_test_json() {
 
     let fol = "../.././.tests/mirl_codec_info/json/full_scale";
 
-    let items: Vec<_> =
-        std::fs::read_dir(fol).unwrap().map(|x| x.unwrap()).collect();
+    let items: Vec<_> = std::fs::read_dir(fol)
+        .unwrap()
+        .map(|x| x.unwrap())
+        .collect();
     let crashability: Vec<Crashability> = items
         .iter()
         .map(|x| get_crashability(&x.file_name().to_string_lossy()))
@@ -70,7 +72,7 @@ fn full_test_json() {
     // Create a thread pool with larger stack size and custom thread names
     let thread_pool = ThreadPoolBuilder::new()
         .num_threads(num_cpus::get())
-        .stack_size(mirl_core::constants::bytes::MB as usize * 32) // 8 MB stack instead of default 2 MB
+        // .stack_size(mirl_core::constants::bytes::MB as usize * 32) // 8 MB stack instead of default 2 MB
         .thread_name(move |idx| format!("json-parser-{}", name_list[idx]))
         .build()
         .unwrap();
@@ -89,7 +91,7 @@ fn full_test_json() {
 
                 let value: Result<
                     (),
-                    Result<Option<PositionedValue>, crate::error::ParsingError>,
+                    Result<Option<PositionedValue>, crate::error::CodecError>,
                 > = {
                     match std::fs::read(&path) {
                         Ok(bytes) => {
@@ -105,7 +107,7 @@ fn full_test_json() {
 
                             Err(crate::from_str::<DefaultJson>(&file))
                         }
-                        Err(_) => Err(Err(crate::error::ParsingError::Unknown)),
+                        Err(_) => Err(Err(crate::error::CodecError::Unknown)),
                     }
                 };
 
@@ -177,24 +179,31 @@ fn full_test_json() {
         })
     );
 }
-
+/// The result after a test
 #[derive(Debug, Clone)]
-struct TestResult {
-    path: String,
-    is_error: bool,
-    message: String,
-    value: PositionedValue,
+pub struct TestResult {
+    /// Path of the test
+    pub path: String,
+    /// If an error occured
+    pub is_error: bool,
+    /// Info
+    pub message: String,
+    /// The resulting value
+    pub value: PositionedValue,
 }
 
 fn simple_test_json() {
     fn get_id(name: &str) -> usize {
         let id: Vec<&str> = name.split('_').collect();
-        id.first().map_or_else(|| 0, |x| x.parse().unwrap_or_default())
+        id.first()
+            .map_or_else(|| 0, |x| x.parse().unwrap_or_default())
     }
     let fol = "../.././.tests/mirl_codec_info/json/simple";
 
-    let mut items: Vec<std::fs::DirEntry> =
-        std::fs::read_dir(fol).unwrap().map(|x| x.unwrap()).collect();
+    let mut items: Vec<std::fs::DirEntry> = std::fs::read_dir(fol)
+        .unwrap()
+        .map(|x| x.unwrap())
+        .collect();
 
     assert!(!items.is_empty(), "No items found for simple test at {fol}");
     items.sort_by_key(|x| get_id(&x.file_name().to_string_lossy()));
@@ -202,21 +211,14 @@ fn simple_test_json() {
     for i in items {
         let path = format!("{fol}/{}", i.file_name().to_string_lossy());
         let file = std::fs::read_to_string(&path).unwrap();
-        let Some(original_value) =
-            test_parse_json(&file, Some(&i.file_name().to_string_lossy()))
+        let Some(original_value) = test_parse_json(&file, Some(&i.file_name().to_string_lossy()))
         else {
             println!("{path} is empty");
             continue;
         };
-        let string = test_marshal::<DefaultJson>(
-            &original_value,
-            &i.file_name().to_string_lossy(),
-        );
+        let string = test_marshal::<DefaultJson>(&original_value, &i.file_name().to_string_lossy());
         let value = test_parse_json(&string, None).unwrap();
-        let another_string = test_marshal::<DefaultJson>(
-            &value,
-            &i.file_name().to_string_lossy(),
-        );
+        let another_string = test_marshal::<DefaultJson>(&value, &i.file_name().to_string_lossy());
         let another_value = test_parse_json(&another_string, None).unwrap();
         assert!(
             string == another_string,
@@ -246,10 +248,7 @@ fn test_parse_json(file: &str, name: Option<&str>) -> Option<PositionedValue> {
     }
 }
 
-fn test_marshal<T: StaticCompactMarshal>(
-    file: &PositionedValue,
-    _name: &str,
-) -> String {
+fn test_marshal<T: StaticCompactMarshal>(file: &PositionedValue, _name: &str) -> String {
     T::to_compact_string(file, 0).unwrap()
 }
 

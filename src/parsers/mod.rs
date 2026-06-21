@@ -4,6 +4,11 @@ pub use json::DefaultJson;
 
 /// All functions used in the css parser
 pub mod css;
+pub use css::DefaultCSS;
+
+/// The toml format
+pub mod toml;
+pub use toml::DefaultToml;
 
 mod builtin;
 pub use builtin::*;

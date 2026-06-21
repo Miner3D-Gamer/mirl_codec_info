@@ -1,15 +1,10 @@
 use mirl_values::prelude::*;
 
 use crate::{
-    PositionRange, error::ParsingError, settings::*, traits::StaticParser,
-    values::PositionedValue,
+    PositionRange, error::CodecError, settings::*, traits::StaticParser, values::PositionedValue,
 };
 /// A generic whitespace skipper
-pub fn skip_whitespace(
-    data: &[char],
-    pos: &mut usize,
-    _value_count: &mut usize,
-) {
+pub fn skip_whitespace(data: &[char], pos: &mut usize, _value_count: &mut usize) {
     while let Some(char) = data.get(*pos) {
         if WHITESPACE_CHARACTERS.contains(char) {
             *pos += 1;
@@ -26,10 +21,10 @@ pub fn access_data(
     data: &[char],
     pos: &mut usize,
     origin: Option<ValueType>,
-) -> Result<char, ParsingError> {
+) -> Result<char, CodecError> {
     data.get(*pos).map_or_else(
         || {
-            Err(ParsingError::UnexpectedEOF {
+            Err(CodecError::UnexpectedEOF {
                 offset: *pos,
                 origin,
                 text: data.iter().collect(),
@@ -48,7 +43,7 @@ pub fn parse_next<T: StaticParser>(
     pos: &mut usize,
     value_type: ValueType,
     value_count: &mut usize,
-) -> Result<PositionedValue, ParsingError> {
+) -> Result<PositionedValue, CodecError> {
     match value_type {
         ValueType::Number => T::parse_number(data, pos, value_count),
         ValueType::String => T::parse_string(data, pos, value_count),
@@ -65,12 +60,12 @@ pub fn parse_next<T: StaticParser>(
         ValueType::Bytes => T::parse_bytes(data, pos, value_count),
         ValueType::Invalid => Err({
             data.get(*pos).map_or_else(
-                || ParsingError::UnexpectedEOF {
+                || CodecError::UnexpectedEOF {
                     offset: *pos,
                     origin: Some(ValueType::Invalid),
                     text: data.iter().collect(),
                 },
-                |c| ParsingError::UnrecognizedType {
+                |c| CodecError::UnrecognizedType {
                     offset: *pos,
                     starting_char: *c,
                     text: data.iter().collect(),
@@ -80,41 +75,43 @@ pub fn parse_next<T: StaticParser>(
     }
 }
 
-#[must_use]
 /// Try to determine the next type
+/// 
+/// # Errors
+/// When a value is misshaped or an unexpected EOF is reached
 pub fn figure_out_next_type<T: StaticParser>(
     data: &[char],
     pos: usize,
-) -> ValueType {
-    if T::is_none(data, pos) {
-        ValueType::None
-    } else if T::is_bool(data, pos) {
-        ValueType::Bool
-    } else if T::is_datetime(data, pos) {
+) -> Result<ValueType, CodecError> {
+    if T::is_none(data, pos)? {
+        Ok(ValueType::None)
+    } else if T::is_bool(data, pos)? {
+        Ok(ValueType::Bool)
+    } else if T::is_datetime(data, pos)? {
         // datetime before time — datetime is a superset of time
-        ValueType::DateTime
-    } else if T::is_time(data, pos) {
-        ValueType::Time
-    } else if T::is_number(data, pos) {
-        ValueType::Number
-    } else if T::is_string(data, pos) {
-        ValueType::String
-    } else if T::is_bytes(data, pos) {
-        ValueType::Bytes
-    } else if T::is_color(data, pos) {
-        ValueType::Color
-    } else if T::is_angle(data, pos) {
-        ValueType::Angle
-    } else if T::is_length(data, pos) {
-        ValueType::Length
-    } else if T::is_literal(data, pos) {
-        ValueType::Literal
-    } else if T::is_list(data, pos) {
-        ValueType::Vec
-    } else if T::is_map(data, pos) {
-        ValueType::Map
+        Ok(ValueType::DateTime)
+    } else if T::is_time(data, pos)? {
+        Ok(ValueType::Time)
+    } else if T::is_number(data, pos)? {
+        Ok(ValueType::Number)
+    } else if T::is_string(data, pos)? {
+        Ok(ValueType::String)
+    } else if T::is_bytes(data, pos)? {
+        Ok(ValueType::Bytes)
+    } else if T::is_color(data, pos)? {
+        Ok(ValueType::Color)
+    } else if T::is_angle(data, pos)? {
+        Ok(ValueType::Angle)
+    } else if T::is_length(data, pos)? {
+        Ok(ValueType::Length)
+    } else if T::is_literal(data, pos)? {
+        Ok(ValueType::Literal)
+    } else if T::is_list(data, pos)? {
+        Ok(ValueType::Vec)
+    } else if T::is_map(data, pos)? {
+        Ok(ValueType::Map)
     } else {
-        ValueType::Invalid
+        Ok(ValueType::Invalid)
     }
 }
 /// Skips any whitespace and parses the next element
@@ -126,12 +123,12 @@ pub fn deal_with_data<T: StaticParser>(
     data: &[char],
     pos: &mut usize,
     value_count: &mut usize,
-) -> Result<PositionedValue, ParsingError> {
+) -> Result<PositionedValue, CodecError> {
     T::skip_whitespace(data, pos, value_count);
     parse_next::<T>(
         data,
         pos,
-        figure_out_next_type::<T>(data, *pos),
+        figure_out_next_type::<T>(data, *pos)?,
         value_count,
     )
 }
@@ -296,7 +293,7 @@ pub fn does_data_start_with_keyword(
     pos: &mut usize,
     original: String,
     value_type: ValueType,
-) -> Result<PositionRange, ParsingError> {
+) -> Result<PositionRange, CodecError> {
     let start = *pos;
     let word: Vec<char> = original.chars().collect();
 
@@ -323,14 +320,14 @@ pub fn does_data_start_with_keyword(
                 }
                 *pos += 1;
             }
-            Err(ParsingError::UnexpectedEOF {
+            Err(CodecError::UnexpectedEOF {
                 offset: *pos,
                 origin: Some(value_type),
                 text: data.iter().collect::<String>(),
             })
         }
     } else {
-        Err(ParsingError::UnexpectedEOF {
+        Err(CodecError::UnexpectedEOF {
             offset: *pos,
             origin: Some(value_type),
             text: data.iter().collect::<String>(),

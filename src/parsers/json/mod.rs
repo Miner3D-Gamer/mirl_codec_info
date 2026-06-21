@@ -2,30 +2,26 @@
 use std::str::FromStr;
 
 use mirl_core::misc::hex_to_number;
-use mirl_extensions::{
-    helper_functions_list::{combined, combined_list},
-    *,
-};
+use mirl_extensions::*;
 use mirl_values::{
     prelude::*,
     values::{ContainerValue, Number, Value},
 };
 
 use crate::{
-    ParsingError, PositionRange, StaticParser,
+    CodecError, PositionRange, StaticParser,
     error::{ParserMishaps, ParserNumberMishap, ParserStringMishap},
     parsers::helper::{
-        access_data, deal_with_data, does_data_start_with_keyword,
-        figure_out_next_type, skip_whitespace,
+        access_data, deal_with_data, does_data_start_with_keyword, figure_out_next_type,
+        skip_whitespace,
     },
     settings::*,
     traits::{
-        MarshalError, StaticCompactMarshalBase, StaticInfo, StaticParserDetect,
-        StaticParserParse,
+        MarshalError, StaticCompactMarshalBase, StaticInfo, StaticParserDetect, StaticParserParse,
     },
     values::{PositionedValue, PositionedValueInner},
 };
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default, Hash)]
 /// The Json parser
 pub struct DefaultJson;
 
@@ -33,38 +29,38 @@ impl StaticInfo for DefaultJson {
     const NAME: &'static str = "JSON";
     const SUPPORTED_EXTENSIONS: &'static [&'static str] = &["json"];
 }
-impl StaticParserDetect for DefaultJson {
-    fn is_number(data: &[char], pos: usize) -> bool {
+unsafe impl StaticParserDetect for DefaultJson {
+    fn is_number(data: &[char], pos: usize) -> Result<bool, CodecError> {
         is_number(data, pos)
     }
 
-    fn is_string(data: &[char], pos: usize) -> bool {
+    fn is_string(data: &[char], pos: usize) -> Result<bool, CodecError> {
         is_string(data, pos)
     }
 
-    fn is_list(data: &[char], pos: usize) -> bool {
+    fn is_list(data: &[char], pos: usize) -> Result<bool, CodecError> {
         is_list(data, pos)
     }
 
-    fn is_map(data: &[char], pos: usize) -> bool {
+    fn is_map(data: &[char], pos: usize) -> Result<bool, CodecError> {
         is_map(data, pos)
     }
 
-    fn is_none(data: &[char], pos: usize) -> bool {
+    fn is_none(data: &[char], pos: usize) -> Result<bool, CodecError> {
         is_none(data, pos)
     }
 
-    fn is_bool(data: &[char], pos: usize) -> bool {
+    fn is_bool(data: &[char], pos: usize) -> Result<bool, CodecError> {
         is_bool(data, pos)
     }
 }
 
-impl StaticParserParse for DefaultJson {
+unsafe impl StaticParserParse for DefaultJson {
     fn parse_number(
         data: &[char],
         pos: &mut usize,
         value_count: &mut usize,
-    ) -> Result<PositionedValue, ParsingError> {
+    ) -> Result<PositionedValue, CodecError> {
         parse_number(data, pos, value_count)
     }
 
@@ -72,7 +68,7 @@ impl StaticParserParse for DefaultJson {
         data: &[char],
         pos: &mut usize,
         value_count: &mut usize,
-    ) -> Result<PositionedValue, ParsingError> {
+    ) -> Result<PositionedValue, CodecError> {
         parse_string(data, pos, value_count)
     }
 
@@ -80,7 +76,7 @@ impl StaticParserParse for DefaultJson {
         data: &[char],
         pos: &mut usize,
         value_count: &mut usize,
-    ) -> Result<PositionedValue, ParsingError> {
+    ) -> Result<PositionedValue, CodecError> {
         parse_list::<Self>(data, pos, value_count)
     }
 
@@ -88,7 +84,7 @@ impl StaticParserParse for DefaultJson {
         data: &[char],
         pos: &mut usize,
         value_count: &mut usize,
-    ) -> Result<PositionedValue, ParsingError> {
+    ) -> Result<PositionedValue, CodecError> {
         parse_map(data, pos, value_count)
     }
 
@@ -96,7 +92,7 @@ impl StaticParserParse for DefaultJson {
         data: &[char],
         pos: &mut usize,
         value_count: &mut usize,
-    ) -> Result<PositionedValue, ParsingError> {
+    ) -> Result<PositionedValue, CodecError> {
         parse_none(data, pos, value_count)
     }
 
@@ -104,18 +100,14 @@ impl StaticParserParse for DefaultJson {
         data: &[char],
         pos: &mut usize,
         value_count: &mut usize,
-    ) -> Result<PositionedValue, ParsingError> {
+    ) -> Result<PositionedValue, CodecError> {
         parse_bool(data, pos, value_count)
     }
-    fn skip_whitespace(
-        data: &[char],
-        pos: &mut usize,
-        value_count: &mut usize,
-    ) {
+    fn skip_whitespace(data: &[char], pos: &mut usize, value_count: &mut usize) {
         skip_whitespace(data, pos, value_count);
     }
 
-    // fn is_comment(data: &[char], pos: usize) -> bool {
+    // fn is_comment(data: &[char], pos: usize) -> Result <bool, CodecError> {
     //     super::helper::is_comment(data, pos)
     // }
 
@@ -130,17 +122,11 @@ impl StaticParserParse for DefaultJson {
 use crate::traits::StaticCompactMarshal;
 
 impl StaticCompactMarshalBase<PositionedValueInner> for DefaultJson {
-    fn marshal_compact_string(
-        input: &str,
-        _depth: usize,
-    ) -> Result<String, MarshalError> {
+    fn marshal_compact_string(input: &str, _depth: usize) -> Result<String, MarshalError> {
         Ok(format!("\"{input}\""))
     }
 
-    fn marshal_compact_number(
-        input: &Number,
-        _depth: usize,
-    ) -> Result<String, MarshalError> {
+    fn marshal_compact_number(input: &Number, _depth: usize) -> Result<String, MarshalError> {
         Ok(input.to_string())
     }
 
@@ -157,16 +143,8 @@ impl StaticCompactMarshalBase<PositionedValueInner> for DefaultJson {
         Ok(format!("[{output}]"))
     }
 
-    fn marshal_compact_bool(
-        input: bool,
-        _depth: usize,
-    ) -> Result<String, MarshalError> {
-        Ok(if input {
-            TRUE_KEYWORD
-        } else {
-            FALSE_KEYWORD
-        }
-        .to_string())
+    fn marshal_compact_bool(input: bool, _depth: usize) -> Result<String, MarshalError> {
+        Ok(if input { TRUE_KEYWORD } else { FALSE_KEYWORD }.to_string())
     }
 
     fn marshal_compact_none(_depth: usize) -> Result<String, MarshalError> {
@@ -192,78 +170,76 @@ impl StaticCompactMarshalBase<PositionedValueInner> for DefaultJson {
     }
 }
 
-#[must_use]
+
 /// Checks if the char is a number, -, or .
-pub fn is_number(data: &[char], pos: usize) -> bool {
-    data.get(pos).map_or_else(
-        || false,
-        |x| {
-            x.is_numeric()
-                || *x == '-'
-                || (MISSING_INTEGER_AUTOMATICALLY_PLACED && *x == '.')
-        },
-    )
+pub fn is_number(data: &[char], pos: usize) -> Result<bool, CodecError> {
+    let first = *get_char(data, pos, 0)?;
+
+    Ok(first.is_numeric()
+        || (first == '-' && (get_char(data, pos, 1)?).is_numeric())
+        || (MISSING_INTEGER_AUTOMATICALLY_PLACED && first == '.'))
 }
-#[must_use]
+/// Get char from data at offset, error otherwise
+pub fn get_char(data: &[char], pos: usize, offset: usize) -> Result<&char, CodecError> {
+    let Some(first) = data.get(pos + offset) else {
+        return Err(CodecError::UnexpectedEOF {
+            offset: pos,
+            origin: Some(ValueType::Number),
+            text: "Expected value, got end of file".to_string(),
+        });
+    };
+    Ok(first)
+}
+
 /// Checks if the first char is a quote
-pub fn is_string(data: &[char], pos: usize) -> bool {
+pub fn is_string(data: &[char], pos: usize) -> Result<bool, CodecError> {
     for i in STRING_INDICATOR {
-        if first_char_is_value(data, *i, pos) {
-            return true;
+        if first_char_is_value(data, *i, pos)? {
+            return Ok(true);
         }
     }
-    false
+    Ok(false)
 }
-#[must_use]
+
 /// Checks if the first char is a list start symbol
-pub fn is_list(data: &[char], pos: usize) -> bool {
+pub fn is_list(data: &[char], pos: usize) -> Result<bool, CodecError> {
     first_char_is_value(data, LIST_START, pos)
 }
-#[must_use]
+
 /// Checks if the first char is a map start symbol
-pub fn is_map(data: &[char], pos: usize) -> bool {
+pub fn is_map(data: &[char], pos: usize) -> Result<bool, CodecError> {
     first_char_is_value(data, MAP_START, pos)
 }
-#[must_use]
+
 /// Checks if the first char of the none keyword matches
-pub fn is_none(data: &[char], pos: usize) -> bool {
+pub fn is_none(data: &[char], pos: usize) -> Result<bool, CodecError> {
     first_char_is_value(
         data,
         unsafe { NONE_KEYWORD.chars().next().unwrap_unchecked() },
         pos,
     )
 }
-#[must_use]
+
 /// Checks if the first char of any boolean keyword matches
-pub fn is_bool(data: &[char], pos: usize) -> bool {
-    first_char_is_value(
+pub fn is_bool(data: &[char], pos: usize) -> Result<bool, CodecError> {
+    Ok(first_char_is_value(
         data,
         unsafe { TRUE_KEYWORD.chars().next().unwrap_unchecked() },
         pos,
-    ) || first_char_is_value(
+    )? || first_char_is_value(
         data,
         unsafe { FALSE_KEYWORD.chars().next().unwrap_unchecked() },
         pos,
-    )
+    )?)
 }
 /// Checks if if the first char matches the given char
-#[must_use]
-pub fn first_char_is_value(data: &[char], value: char, pos: usize) -> bool {
-    if ALLOW_NON_LOWERCASE_KEYWORDS {
-        data.get(pos).map_or_else(
-            || false,
-            |x| {
-                x.to_lowercase()
-                    .to_string()
-                    .chars()
-                    .nth(pos)
-                    .unwrap_or_default()
-                    == value
-            },
-        )
+pub fn first_char_is_value(data: &[char], value: char, pos: usize) -> Result<bool, CodecError> {
+    let char = *get_char(data, pos, 0)?;
+    Ok(if ALLOW_NON_LOWERCASE_KEYWORDS {
+        char.to_ascii_lowercase()
     } else {
-        data.get(pos).map_or_else(|| false, |x| *x == value)
-    }
+        char
+    } == value)
 }
 #[allow(clippy::too_many_lines)]
 /// Parse a number - int or float
@@ -271,7 +247,7 @@ pub fn parse_number(
     data: &[char],
     pos: &mut usize,
     value_count: &mut usize,
-) -> Result<PositionedValue, ParsingError> {
+) -> Result<PositionedValue, CodecError> {
     // let c = data.iter().collect::<String>();
     // if c.len() < 500 {
     //     println!("Parsing num at {} with {} ({})", pos, value_count, c);
@@ -309,13 +285,12 @@ pub fn parse_number(
             // But not if it's a second dot
             if *char == '.' {
                 if output.contains('.') {
-                    let message =
-                        if unsafe { output.pop().unwrap_unchecked() } == '.' {
-                            ParserNumberMishap::RangeNotAllowed
-                        } else {
-                            ParserNumberMishap::MultipleDots
-                        };
-                    return Err(ParsingError::UnexpectedCharacter {
+                    let message = if unsafe { output.pop().unwrap_unchecked() } == '.' {
+                        ParserNumberMishap::RangeNotAllowed
+                    } else {
+                        ParserNumberMishap::MultipleDots
+                    };
+                    return Err(CodecError::UnexpectedCharacter {
                         offset: *pos,
                         given: *char,
                         expected: NUMBER_CHARS.to_vec(),
@@ -328,7 +303,7 @@ pub fn parse_number(
                     if MISSING_INTEGER_AUTOMATICALLY_PLACED {
                         output.push('0');
                     } else {
-                        return Err(ParsingError::UnexpectedCharacter {
+                        return Err(CodecError::UnexpectedCharacter {
                             offset: *pos,
                             given: *char,
                             expected: NUMBER_CHARS.to_vec(),
@@ -349,10 +324,8 @@ pub fn parse_number(
         } else if scientific_notation == 0 && char.eq_ignore_ascii_case(&'e')
             || (scientific_notation == 1 && (*char == '-' || *char == '+'))
         {
-            if char.eq_ignore_ascii_case(&'e')
-                && ['.', '-'].contains(&data[*pos - 1])
-            {
-                return Err(ParsingError::UnexpectedCharacter {
+            if char.eq_ignore_ascii_case(&'e') && ['.', '-'].contains(&data[*pos - 1]) {
+                return Err(CodecError::UnexpectedCharacter {
                     offset: *pos,
                     given: *char,
                     expected: NUMBER_CHARS.to_vec(),
@@ -366,22 +339,20 @@ pub fn parse_number(
             output.push(*char);
             *pos += 2; // THIS SHOULD BE A 2 INSTEAD OF A 1, FINALLY
             scientific_notation += 1;
-        } else if combined_list(
-            WHITESPACE_CHARACTERS,
-            &[LIST_END, MAP_END, ELEMENT_SEPARATOR],
-        )
-        .contains(char)
+        } else if WHITESPACE_CHARACTERS
+            .to_vec()
+            .combined_with([LIST_END, MAP_END, ELEMENT_SEPARATOR].to_vec())
+            .contains(char)
         {
             // Number ends naturally
             break;
         } else {
-            return Err(ParsingError::UnexpectedCharacter {
+            return Err(CodecError::UnexpectedCharacter {
                 offset: *pos,
                 given: *char,
-                expected: combined_list(
-                    NUMBER_CHARS,
-                    ALLOWED_ELEMENT_INTERRUPTIONS,
-                ),
+                expected: NUMBER_CHARS
+                    .to_vec()
+                    .combined_with(ALLOWED_ELEMENT_INTERRUPTIONS.to_vec()),
 
                 text: data.iter().collect(),
                 error: ParserMishaps::Number(
@@ -390,47 +361,41 @@ pub fn parse_number(
             });
         }
         if value_is_zero && !value_is_float && scientific_notation == 0 {
-            return Err(ParsingError::UnexpectedCharacter {
+            return Err(CodecError::UnexpectedCharacter {
                 offset: *pos,
                 given: *char,
                 expected: ALLOWED_ELEMENT_INTERRUPTIONS.to_vec(),
 
                 text: data.iter().collect(),
-                error: ParserMishaps::Number(
-                    crate::error::ParserNumberMishap::LeadingZeros,
-                ),
+                error: ParserMishaps::Number(crate::error::ParserNumberMishap::LeadingZeros),
             });
         }
     }
     if output == "-" || output == "." {
-        return Err(ParsingError::UnexpectedCharacter {
+        return Err(CodecError::UnexpectedCharacter {
             offset: *pos,
             given: '-',
             expected: if MISSING_INTEGER_AUTOMATICALLY_PLACED {
-                combined(NUMBER_CHARS.to_vec(), '.')
+                NUMBER_CHARS.to_vec().combined('.')
             } else {
                 NUMBER_CHARS.to_vec()
             },
 
             text: data.iter().collect(),
-            error: ParserMishaps::Number(
-                crate::error::ParserNumberMishap::NumberWithoutNumber,
-            ),
+            error: ParserMishaps::Number(crate::error::ParserNumberMishap::NumberWithoutNumber),
         });
     }
     if output.ends_with('.') {
         if MISSING_INTEGER_AUTOMATICALLY_PLACED {
             output.push('0');
         } else {
-            return Err(ParsingError::UnexpectedCharacter {
+            return Err(CodecError::UnexpectedCharacter {
                 offset: *pos,
                 given: '.',
                 expected: NUMBER_CHARS.to_vec(),
 
                 text: data.iter().collect(),
-                error: ParserMishaps::Number(
-                    crate::error::ParserNumberMishap::IncompleteFloat,
-                ),
+                error: ParserMishaps::Number(crate::error::ParserNumberMishap::IncompleteFloat),
             });
         }
     }
@@ -446,7 +411,7 @@ pub fn parse_number(
     //     });
     // }
     if ['+', '-', 'e', 'E'].contains(&data[*pos - 1]) {
-        return Err(ParsingError::UnexpectedCharacter {
+        return Err(CodecError::UnexpectedCharacter {
             offset: *pos,
             given: data[*pos - 1],
             expected: NUMBER_CHARS.to_vec(),
@@ -460,7 +425,7 @@ pub fn parse_number(
     let v = PositionedValue {
         value: SimpleValue::Number(Number::from_str(&output).map_or_else(
             |()| {
-                Err(ParsingError::UnexpectedCharacter {
+                Err(CodecError::UnexpectedCharacter {
                     offset: *pos,
                     given: '?',
                     expected: Vec::new(),
@@ -485,7 +450,7 @@ pub fn parse_string(
     data: &[char],
     pos: &mut usize,
     value_count: &mut usize,
-) -> Result<PositionedValue, ParsingError> {
+) -> Result<PositionedValue, CodecError> {
     let mut output = String::new();
     let start = *pos;
     let mut escaping = false;
@@ -493,7 +458,7 @@ pub fn parse_string(
 
     let string_type = *data.get(*pos).map_or_else(
         || {
-            Err(ParsingError::UnexpectedEOF {
+            Err(CodecError::UnexpectedEOF {
                 offset: *pos,
                 origin: Some(ValueType::String),
                 text: data.iter().collect(),
@@ -503,7 +468,7 @@ pub fn parse_string(
     )?; // Man, I love rust
     if string_type != '"' {
         // TODO: ERROR
-        return Err(ParsingError::UnexpectedCharacter {
+        return Err(CodecError::UnexpectedCharacter {
             offset: *pos,
             given: string_type,
             expected: vec!['"'],
@@ -543,7 +508,7 @@ pub fn parse_string(
                 }
             }
             if !all_good {
-                return Err(ParsingError::UnexpectedEOF {
+                return Err(CodecError::UnexpectedEOF {
                     offset: *pos,
                     origin: Some(ValueType::String),
                     text: data.iter().collect(),
@@ -551,7 +516,7 @@ pub fn parse_string(
             }
             let string = temp_unicode.iter().collect::<String>();
             let Some(_number) = hex_to_number(&string) else {
-                return Err(ParsingError::UnexpectedElement {
+                return Err(CodecError::UnexpectedElement {
                     value: PositionedValue {
                         value: SimpleValue::String(string).into(),
                         position: PositionRange::new(potential_error_pos, *pos),
@@ -559,9 +524,7 @@ pub fn parse_string(
                         container: None,
                     },
 
-                    error: ParserMishaps::String(
-                        ParserStringMishap::InvalidUnicodeSequence,
-                    ),
+                    error: ParserMishaps::String(ParserStringMishap::InvalidUnicodeSequence),
                     expected: vec![ValueType::String],
                     text: data.iter().collect(), // Invalid unicode sequence
                 });
@@ -584,7 +547,7 @@ pub fn parse_string(
             continue;
         }
         if !ALLOW_NULL_CHARACTER && *char as usize == 0 {
-            return Err(ParsingError::UnexpectedCharacter {
+            return Err(CodecError::UnexpectedCharacter {
                 offset: *pos,
                 given: *char,
                 expected: Vec::new(),
@@ -600,15 +563,13 @@ pub fn parse_string(
                 && (!char.is_control() || disallowed_to_escape.contains(char)))
                 && !ALLOWED_ESCAPED.contains(char)
             {
-                return Err(ParsingError::UnexpectedCharacter {
+                return Err(CodecError::UnexpectedCharacter {
                     offset: *pos,
                     given: *char,
                     expected: ALLOWED_ESCAPED.to_vec(),
 
                     text: data.iter().collect(),
-                    error: ParserMishaps::String(
-                        ParserStringMishap::EscapedInvalidCharacter,
-                    ),
+                    error: ParserMishaps::String(ParserStringMishap::EscapedInvalidCharacter),
                 });
             }
             // println!(
@@ -621,15 +582,13 @@ pub fn parse_string(
             && char.is_control()
             && !CONTROL_CHARACTERS_ALLOWED_TO_BE_UNESCAPED.contains(char)
         {
-            return Err(ParsingError::UnexpectedCharacter {
+            return Err(CodecError::UnexpectedCharacter {
                 offset: *pos,
                 given: *char,
                 expected: Vec::new(),
 
                 text: data.iter().collect(),
-                error: ParserMishaps::String(
-                    ParserStringMishap::UnescapedControlCharacter,
-                ),
+                error: ParserMishaps::String(ParserStringMishap::UnescapedControlCharacter),
             });
         }
         escaping = false;
@@ -646,7 +605,7 @@ pub fn parse_string(
             container: None,
         })
     } else {
-        Err(ParsingError::UnexpectedEOF {
+        Err(CodecError::UnexpectedEOF {
             offset: *pos,
             origin: Some(ValueType::String),
             text: data.iter().collect::<String>(),
@@ -659,7 +618,7 @@ pub fn parse_list<P: StaticParser>(
     data: &[char],
     pos: &mut usize,
     value_count: &mut usize,
-) -> Result<PositionedValue, ParsingError> {
+) -> Result<PositionedValue, CodecError> {
     let start = *pos;
     *pos += 1;
     if access_data(data, pos, Some(ValueType::Vec))? == LIST_END {
@@ -674,15 +633,13 @@ pub fn parse_list<P: StaticParser>(
         return Ok(v);
     }
     if access_data(data, pos, Some(ValueType::Vec))? == ELEMENT_SEPARATOR {
-        return Err(ParsingError::UnexpectedCharacter {
+        return Err(CodecError::UnexpectedCharacter {
             offset: *pos,
             given: ELEMENT_SEPARATOR,
             expected: vec![ELEMENT_SEPARATOR, LIST_END],
 
             text: data.iter().collect::<String>(),
-            error: ParserMishaps::Array(
-                crate::error::ParserArrayMishap::EmptyElement,
-            ),
+            error: ParserMishaps::Array(crate::error::ParserArrayMishap::EmptyElement),
         });
     }
     let list_id = *value_count;
@@ -702,7 +659,7 @@ pub fn parse_list<P: StaticParser>(
                 P::skip_whitespace(data, pos, value_count);
                 if let Some(c) = data.get(*pos) {
                     if *c == ELEMENT_SEPARATOR {
-                        return Err(ParsingError::UnexpectedCharacter {
+                        return Err(CodecError::UnexpectedCharacter {
                             offset: *pos,
                             given: *c,
                             expected: vec![ELEMENT_SEPARATOR, LIST_END],
@@ -714,7 +671,7 @@ pub fn parse_list<P: StaticParser>(
                         });
                     }
                 } else {
-                    Err(ParsingError::UnexpectedEOF {
+                    Err(CodecError::UnexpectedEOF {
                         offset: *pos,
                         origin: Some(ValueType::Vec),
                         text: data.iter().collect::<String>(),
@@ -725,7 +682,7 @@ pub fn parse_list<P: StaticParser>(
             let value = super::helper::parse_next::<P>(
                 data,
                 pos,
-                super::helper::figure_out_next_type::<P>(data, *pos),
+                super::helper::figure_out_next_type::<P>(data, *pos)?,
                 value_count,
             )?;
             values.push(value);
@@ -741,7 +698,7 @@ pub fn parse_list<P: StaticParser>(
             });
         } else {
             *pos -= 0; // Why -2? Idk but it works
-            let test = figure_out_next_type::<P>(data, *pos);
+            let test = figure_out_next_type::<P>(data, *pos)?;
             // println!(">> '{}'", char);
             // println!("!> '{:?}'", test);
             // if test == ValueType::Comment {
@@ -758,7 +715,7 @@ pub fn parse_list<P: StaticParser>(
                     continue;
                 }
             }
-            return Err(ParsingError::UnexpectedCharacter {
+            return Err(CodecError::UnexpectedCharacter {
                 offset: *pos,
                 given: *char,
                 expected: vec![ELEMENT_SEPARATOR, LIST_END],
@@ -771,26 +728,24 @@ pub fn parse_list<P: StaticParser>(
         }
     }
 
-    Err(ParsingError::UnexpectedEOF {
+    Err(CodecError::UnexpectedEOF {
         offset: *pos,
         origin: Some(ValueType::Vec),
         text: data.iter().collect::<String>(),
     })
 }
 /// Parse {key}:{value}
-fn parse_key_and_item(
+pub fn parse_key_and_item(
     data: &[char],
     pos: &mut usize,
     value_count: &mut usize,
-) -> Result<(PositionedValue, PositionedValue), ParsingError> {
+) -> Result<(PositionedValue, PositionedValue), CodecError> {
     let key = deal_with_data::<DefaultJson>(data, pos, value_count)?;
 
     if !ALLOW_NON_STRING_KEYS && key.get_value_type() != ValueType::String {
-        return Err(ParsingError::UnexpectedElement {
+        return Err(CodecError::UnexpectedElement {
             value: key,
-            error: ParserMishaps::Map(
-                crate::error::ParserMapMishap::InvalidKeyType,
-            ),
+            error: ParserMishaps::Map(crate::error::ParserMapMishap::InvalidKeyType),
             expected: vec![ValueType::String],
             text: data.iter().collect(),
         });
@@ -808,21 +763,17 @@ fn parse_key_and_item(
         if AUTOMATIC_SEPARATOR_INSERTION {
             *pos -= 2;
 
-            let test = figure_out_next_type::<DefaultJson>(data, *pos);
+            let test = figure_out_next_type::<DefaultJson>(data, *pos)?;
 
             if test == ValueType::Invalid {
-                return Err(ParsingError::UnexpectedCharacter {
+                return Err(CodecError::UnexpectedCharacter {
                     offset: *pos,
                     given: *first,
-                    expected: combined_list(
-                        &[MAP_POINTER, MAP_START, LIST_START],
-                        NUMBER_CHARS,
-                    ),
-
+                    expected: [MAP_POINTER, MAP_START, LIST_START]
+                        .to_vec()
+                        .combined_with(NUMBER_CHARS.to_vec()),
                     text: data.iter().collect::<String>(),
-                    error: ParserMishaps::Map(
-                        crate::error::ParserMapMishap::DataAfterKeyElement,
-                    ),
+                    error: ParserMishaps::Map(crate::error::ParserMapMishap::DataAfterKeyElement),
                 });
             }
 
@@ -832,18 +783,16 @@ fn parse_key_and_item(
 
             return Ok((key, value));
         }
-        Err(ParsingError::UnexpectedCharacter {
+        Err(CodecError::UnexpectedCharacter {
             offset: *pos,
             given: *first,
             expected: vec![MAP_POINTER],
 
             text: data.iter().collect::<String>(),
-            error: ParserMishaps::Map(
-                crate::error::ParserMapMishap::DataAfterKeyElement,
-            ),
+            error: ParserMishaps::Map(crate::error::ParserMapMishap::DataAfterKeyElement),
         })
     } else {
-        Err(ParsingError::UnexpectedEOF {
+        Err(CodecError::UnexpectedEOF {
             offset: *pos,
             origin: Some(ValueType::Map),
             text: data.iter().collect::<String>(),
@@ -851,11 +800,11 @@ fn parse_key_and_item(
     }
 }
 /// Parse a map, object, dict, or whatever else you call it {}
-fn parse_map(
+pub fn parse_map(
     data: &[char],
     pos: &mut usize,
     value_count: &mut usize,
-) -> Result<PositionedValue, ParsingError> {
+) -> Result<PositionedValue, CodecError> {
     let start = *pos;
     *pos += 1;
     if access_data(data, pos, Some(ValueType::Map))? == MAP_END {
@@ -895,7 +844,7 @@ fn parse_map(
             if AUTOMATIC_SEPARATOR_INSERTION {
                 //*pos -= 4; // Why -2? Idk but it works
                 // println!(">> '{}'", first_char);
-                let test = figure_out_next_type::<DefaultJson>(data, *pos);
+                let test = figure_out_next_type::<DefaultJson>(data, *pos)?;
                 //println!("!> '{:?}'", test);
                 *pos -= 2;
                 if test != ValueType::Invalid {
@@ -903,19 +852,17 @@ fn parse_map(
                     continue;
                 }
             }
-            return Err(ParsingError::UnexpectedCharacter {
+            return Err(CodecError::UnexpectedCharacter {
                 offset: *pos,
                 given: *first_char,
                 expected: vec![ELEMENT_SEPARATOR, MAP_END],
                 text: data.iter().collect::<String>(),
-                error: ParserMishaps::Map(
-                    crate::error::ParserMapMishap::DataAfterValueElement,
-                ),
+                error: ParserMishaps::Map(crate::error::ParserMapMishap::DataAfterValueElement),
             });
         }
     }
 
-    Err(ParsingError::UnexpectedEOF {
+    Err(CodecError::UnexpectedEOF {
         offset: *pos,
         origin: Some(ValueType::Map),
         text: data.iter().collect::<String>(),
@@ -926,13 +873,8 @@ pub fn parse_none(
     data: &[char],
     pos: &mut usize,
     value_count: &mut usize,
-) -> Result<PositionedValue, ParsingError> {
-    let val = does_data_start_with_keyword(
-        data,
-        pos,
-        NONE_KEYWORD.to_string(),
-        ValueType::None,
-    )?;
+) -> Result<PositionedValue, CodecError> {
+    let val = does_data_start_with_keyword(data, pos, NONE_KEYWORD.to_string(), ValueType::None)?;
     Ok(PositionedValue {
         value: Value::new_none(),
         position: val,
@@ -945,7 +887,7 @@ pub fn parse_bool(
     data: &[char],
     pos: &mut usize,
     value_count: &mut usize,
-) -> Result<PositionedValue, ParsingError> {
+) -> Result<PositionedValue, CodecError> {
     if access_data(data, pos, Some(ValueType::Bool))?
         == unsafe { TRUE_KEYWORD.chars().next().unwrap_unchecked() }
     {

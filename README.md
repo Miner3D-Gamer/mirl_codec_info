@@ -10,17 +10,20 @@
 **Core**
 
 - ~~`std` (Default)~~ - `std` is required
-
 - `c_compatible`
 
 **Codec**
 
+- `all_codecs`
 - `serde`
 - `bitcode`
 - `wincode` (bitcode recommended)
+- `zerocopy`
+- `compactly`
 
 **Enum**
 
+- `all_enum_extensions`
 - `strum`
 - `enum_ext`
 
@@ -32,7 +35,7 @@
 
 ### Purpose
 
-Retain metadata when processing formats
+Instead of solely focusing on speed, retain additional metadata when processing elements in codec formats (like json).
 
 #### Parse
 

@@ -2,14 +2,10 @@
 use mirl_values::prelude::*;
 
 use crate::{
-    PositionRange,
-    parsers::helper::{deal_with_data, skip_whitespace},
-    settings::MapType,
-    traits::{StaticInfo, StaticParserDetect, StaticParserParse},
-    values::PositionedValue,
+    PositionRange, error::CodecError, parsers::{helper::{deal_with_data, skip_whitespace}, json::get_char}, settings::MapType, traits::{StaticInfo, StaticParserDetect, StaticParserParse}, values::PositionedValue
 };
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default, Hash)]
 /// The css parser
 pub struct DefaultCSS;
 
@@ -21,44 +17,36 @@ impl StaticInfo for DefaultCSS {
 /// What chars the keys are allowed to have
 pub const ALLOWED_KEY_CHARS: &str = "qwertyuiopasdfghjklzxcvbnm-";
 /// What chars the map names are allowed to have + chars between
-pub const ALLOWED_MAP_CHARS: &str =
-    "qwertyuiopasdfghjklzxcvbnm:,. \n-1234567890";
+pub const ALLOWED_MAP_CHARS: &str = "qwertyuiopasdfghjklzxcvbnm:,. \n-1234567890";
 /// What chars the map names are allowed to have
 pub const ALLOWED_MAP_NAME_CHARS: &str = "qwertyuiopasdfghjklzxcvbnm";
 
-impl StaticParserDetect for DefaultCSS {
-    fn is_map(data: &[char], pos: usize) -> bool {
+unsafe impl StaticParserDetect for DefaultCSS {
+    fn is_map(data: &[char], pos: usize) -> Result<bool, CodecError> {
         let mut pos = pos;
         let mut has_name = false;
         loop {
-            let Some(char) = data.get(pos) else {
-                return false;
-            };
+            let char = get_char(data, pos, 0)?;
             if '{'.eq(char) {
-                return has_name;
+                return Ok(has_name);
             }
 
-            if ALLOWED_MAP_NAME_CHARS.contains(unsafe {
-                char.to_lowercase().nth(0).unwrap_unchecked()
-            }) {
+            if ALLOWED_MAP_NAME_CHARS
+                .contains(unsafe { char.to_lowercase().nth(0).unwrap_unchecked() })
+            {
                 has_name = true;
             }
-            if !ALLOWED_MAP_CHARS.contains(unsafe {
-                char.to_lowercase().nth(0).unwrap_unchecked()
-            }) {
-                return false;
+            if !ALLOWED_MAP_CHARS.contains(unsafe { char.to_lowercase().nth(0).unwrap_unchecked() })
+            {
+                return Ok(false);
             }
 
             pos += 1;
         }
     }
 }
-impl StaticParserParse for DefaultCSS {
-    fn skip_whitespace(
-        data: &[char],
-        pos: &mut usize,
-        value_count: &mut usize,
-    ) {
+unsafe impl StaticParserParse for DefaultCSS {
+    fn skip_whitespace(data: &[char], pos: &mut usize, value_count: &mut usize) {
         skip_whitespace(data, pos, value_count);
     }
 }
@@ -67,7 +55,7 @@ pub fn parse_top_level(
     data: &[char],
     pos: &mut usize,
     value_count: &mut usize,
-) -> Result<crate::values::PositionedValue, crate::error::ParsingError> {
+) -> Result<crate::values::PositionedValue, crate::error::CodecError> {
     let mut css_file = MapType::new();
     let start = *pos;
 
@@ -84,28 +72,28 @@ pub fn parse_top_level(
         css_file.insert(names, items);
     }
     let v = PositionedValue {
-        value: mirl_values::values::Value::Container(
-            mirl_values::values::ContainerValue::Map(css_file),
-        ),
+        value: mirl_values::values::Value::Container(mirl_values::values::ContainerValue::Map(
+            css_file,
+        )),
         position: PositionRange::new(start, *pos),
         item_id: *value_count,
         container: None,
     };
     Ok(v)
 }
-
-fn parse_map(
+/// Parse a CSS map
+pub fn parse_map(
     data: &[char],
     pos: &mut usize,
     value_count: &mut usize,
-) -> Result<crate::values::PositionedValue, crate::error::ParsingError> {
+) -> Result<crate::values::PositionedValue, crate::error::CodecError> {
     let mut map = MapType::new();
     let start = *pos;
     *pos += 1;
     loop {
         let key = parse_key_value(data, pos, value_count)?;
         let Some(char) = data.get(*pos) else {
-            return Err(crate::error::ParsingError::ExpectedEOF {
+            return Err(crate::error::CodecError::ExpectedEOF {
                 offset: *pos,
                 origin: Some(ValueType::Map),
                 text: data.iter().collect(),
@@ -114,7 +102,7 @@ fn parse_map(
         skip_whitespace(data, pos, value_count);
 
         if ':'.ne(char) {
-            return Err(crate::error::ParsingError::UnexpectedCharacter {
+            return Err(crate::error::CodecError::UnexpectedCharacter {
                 offset: *pos,
                 given: *char,
                 expected: vec![':'],
@@ -128,7 +116,7 @@ fn parse_map(
         let value = parse_value(data, pos, value_count)?;
         skip_whitespace(data, pos, value_count);
         let Some(char) = data.get(*pos) else {
-            return Err(crate::error::ParsingError::ExpectedEOF {
+            return Err(crate::error::CodecError::ExpectedEOF {
                 offset: *pos,
                 origin: Some(ValueType::Map),
                 text: data.iter().collect(),
@@ -149,7 +137,7 @@ fn parse_map(
             *pos += 1;
             continue;
         }
-        return Err(crate::error::ParsingError::UnexpectedCharacter {
+        return Err(crate::error::CodecError::UnexpectedCharacter {
             offset: *pos,
             given: *char,
             expected: vec!['}'],
@@ -160,27 +148,28 @@ fn parse_map(
         });
     }
 }
-
-fn parse_value(
+/// Parse the nex css value
+pub fn parse_value(
     data: &[char],
     pos: &mut usize,
     value_count: &mut usize,
-) -> Result<crate::values::PositionedValue, crate::error::ParsingError> {
+) -> Result<crate::values::PositionedValue, crate::error::CodecError> {
     let val = deal_with_data::<DefaultCSS>(data, pos, value_count)?;
     Ok(val)
 }
-fn parse_key_value(
+/// Parse the next css value
+pub fn parse_key_value(
     data: &[char],
     pos: &mut usize,
     value_count: &mut usize,
-) -> Result<crate::values::PositionedValue, crate::error::ParsingError> {
+) -> Result<crate::values::PositionedValue, crate::error::CodecError> {
     let start = *pos;
     let mut key = String::new();
     while let Some(char) = data.get(*pos) {
         if !ALLOWED_KEY_CHARS.contains(*char) {
             skip_whitespace(data, pos, value_count);
             let Some(char) = data.get(*pos) else {
-                return Err(crate::error::ParsingError::UnexpectedEOF {
+                return Err(crate::error::CodecError::UnexpectedEOF {
                     offset: *pos,
                     origin: Some(ValueType::Map),
                     text: data.iter().collect(),
@@ -196,14 +185,12 @@ fn parse_key_value(
         *pos += 1;
     }
     if key.is_empty() {
-        return Err(crate::error::ParsingError::UnexpectedCharacter {
+        return Err(crate::error::CodecError::UnexpectedCharacter {
             offset: *pos,
             given: ':',
             expected: ALLOWED_KEY_CHARS.chars().collect(),
             text: data.iter().collect(),
-            error: crate::error::ParserMishaps::Map(
-                crate::error::ParserMapMishap::MissingKey,
-            ),
+            error: crate::error::ParserMishaps::Map(crate::error::ParserMapMishap::MissingKey),
         });
     }
 
@@ -215,12 +202,12 @@ fn parse_key_value(
         container: None,
     })
 }
-
-fn parse_names(
+/// Parse the CSS names
+pub fn parse_names(
     data: &[char],
     pos: &mut usize,
     value_count: &mut usize,
-) -> Result<crate::values::PositionedValue, crate::error::ParsingError> {
+) -> Result<crate::values::PositionedValue, crate::error::CodecError> {
     let start = *pos;
     let mut state_collect_more = false;
     let mut names: Vec<crate::values::PositionedValue> = Vec::new();
@@ -230,7 +217,7 @@ fn parse_names(
         // Get name
         loop {
             let Some(char) = data.get(*pos) else {
-                return Err(crate::error::ParsingError::ExpectedEOF {
+                return Err(crate::error::CodecError::ExpectedEOF {
                     offset: *pos,
                     origin: Some(ValueType::Map),
                     text: data.iter().collect(),
@@ -240,7 +227,7 @@ fn parse_names(
                 skip_whitespace(data, pos, value_count);
 
                 let Some(char) = data.get(*pos) else {
-                    return Err(crate::error::ParsingError::ExpectedEOF {
+                    return Err(crate::error::CodecError::ExpectedEOF {
                         offset: *pos,
                         origin: Some(ValueType::Map),
                         text: data.iter().collect(),
@@ -256,7 +243,7 @@ fn parse_names(
                     state_collect_more = true;
                     break;
                 }
-                return Err(crate::error::ParsingError::UnexpectedCharacter {
+                return Err(crate::error::CodecError::UnexpectedCharacter {
                     offset: *pos,
                     given: *char,
                     expected: vec![',', '{'],
@@ -272,9 +259,7 @@ fn parse_names(
             }
         }
         names.push(PositionedValue {
-            value: mirl_values::values::Value::Simple(SimpleValue::Literal(
-                name,
-            )),
+            value: mirl_values::values::Value::Simple(SimpleValue::Literal(name)),
             position: PositionRange::new(name_start, *pos),
             item_id: *value_count,
             container: None,
@@ -285,9 +270,9 @@ fn parse_names(
         }
     }
     let v = PositionedValue {
-        value: mirl_values::values::Value::Container(
-            mirl_values::values::ContainerValue::Vec(names),
-        ),
+        value: mirl_values::values::Value::Container(mirl_values::values::ContainerValue::Vec(
+            names,
+        )),
         position: PositionRange::new(start, *pos),
         item_id: *value_count,
         container: None,

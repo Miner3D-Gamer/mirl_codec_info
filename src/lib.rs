@@ -22,7 +22,7 @@
 //! # Supported formats
 //!
 //! **JSON**
-//! - Passes all but 2* tests from [JSONTestSuite](https://github.com/nst/JSONTestSuite) (Failed `n_structure_100000_opening_arrays.json` and `n_structure_open_array_object.json` as this lib uses a recursive structure and stack overflows, 2 tests have also been removed because of their unusual file format, not their contents which is parsed perfectly fine)
+//! - Passes all but 2* tests from [JSONTestSuite](https://github.com/nst/JSONTestSuite) (Failed `n_structure_100000_opening_arrays.json` and `n_structure_open_array_object.json` as this lib uses a recursive structure and stack overflows. 2 tests have also been removed because of their unusual file encoding, their contents would have been parsed perfectly fine)
 //!
 //! **CSS**
 //! - No "@" support and no "[*]" support. Otherwise passes the 300 line testing css.
@@ -32,7 +32,8 @@
 //! If you encounter an issue or want to contribute, open a GitHub issue.
 //!
 //! ### TODO:
-//! - Add more parsers
+//! - Add support for comments
+//! - Add more parsers (yalm)
 //! - Add more marshals
 //! - Clean up other TODO
 
@@ -46,8 +47,8 @@ pub mod settings;
 pub mod values;
 
 #[cfg(test)]
-// #[cfg(feature = "strum")]
-mod test;
+/// Tests
+pub mod test;
 // #[cfg(not(feature = "strum"))]
 // mod test {
 //     #[test]
@@ -89,7 +90,7 @@ impl PositionRange {
 pub mod prelude;
 
 use crate::{
-    error::ParsingError,
+    error::CodecError,
     settings::*,
     traits::{
         MarshalError, StaticCompactMarshal, StaticFormattedMarshal,
@@ -110,7 +111,7 @@ pub mod inserter;
 /// Errors upon invalid/corrupt data
 pub fn json_from_str(
     data: &str,
-) -> Result<Option<PositionedValue>, ParsingError> {
+) -> Result<Option<PositionedValue>, CodecError> {
     from_str::<parsers::DefaultJson>(data)
 }
 
@@ -122,7 +123,7 @@ pub fn json_from_str(
 /// Errors upon invalid/corrupt data
 pub fn from_str<T: StaticParser>(
     data: &str,
-) -> Result<Option<PositionedValue>, ParsingError> {
+) -> Result<Option<PositionedValue>, CodecError> {
     let chars: Vec<char> = data.chars().collect();
     let mut pos = 0;
     let mut value_count = 0;
@@ -143,7 +144,7 @@ pub fn from_str<T: StaticParser>(
     ) {
         Ok(val) => val,
         Err(err) => {
-            if err == ParsingError::EmptyFile {
+            if err == CodecError::EmptyFile {
                 return Ok(None);
             }
             Err(err)?
@@ -154,7 +155,7 @@ pub fn from_str<T: StaticParser>(
         let temp_pos = pos;
         T::skip_whitespace(&chars, &mut pos, &mut value_count);
         if chars.len() != pos {
-            return Err(ParsingError::ExpectedEOF {
+            return Err(CodecError::ExpectedEOF {
                 offset: temp_pos,
                 origin: None,
                 text: temp.iter().collect(),

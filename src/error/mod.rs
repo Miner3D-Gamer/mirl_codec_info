@@ -1,11 +1,11 @@
 use mirl_core::text::position::line_and_column_from_offset;
 use mirl_values::values::ValueType;
 
-impl std::error::Error for ParsingError {}
+impl std::error::Error for CodecError {}
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 /// Any errors that may occur while parsing the given data
-pub enum ParsingError {
+pub enum CodecError {
     /// When a character was expected but another was provided
     UnexpectedCharacter {
         /// The position of the invalid character
@@ -66,12 +66,14 @@ pub enum ParsingError {
         /// The input text
         text: String,
     },
+    /// A custom error message
+    Custom(String),
     /// This will error will never be returned yet is internally used
     EmptyFile,
     /// When a type couldn't be determined or something outside of parsing happened
     Unknown,
 }
-impl std::fmt::Display for ParsingError {
+impl std::fmt::Display for CodecError {
     #[allow(clippy::too_many_lines)]
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let text: &str = match self {
@@ -150,12 +152,9 @@ impl std::fmt::Display for ParsingError {
                 error,
             } => &{
                 let position = value.get_position();
-                let (line, column) =
-                    line_and_column_from_offset(position.offset, text);
-                let (line2, column2) = line_and_column_from_offset(
-                    position.offset + position.width,
-                    text,
-                );
+                let (line, column) = line_and_column_from_offset(position.offset, text);
+                let (line2, column2) =
+                    line_and_column_from_offset(position.offset + position.width, text);
                 format!(
                     "{}:{} to {}:{}: Expected: {:?} ({}) but got Element {:?} instead. (Parsing {:?})",
                     line,
@@ -178,12 +177,12 @@ impl std::fmt::Display for ParsingError {
                 &format!("{line}:{column}, got unsupported type: {value_type}")
             }
             Self::EmptyFile => "File is empty - No value could be extracted",
+            Self::Custom(custom) => custom,
         };
 
         std::fmt::Display::fmt(text, f)
     }
 }
-
 mod mishaps;
 pub use mishaps::*;
 

@@ -1,6 +1,5 @@
 use crate::{
-    error::ParsingError, settings::ERROR_ON_EXPECTED_EOF, traits::DynInfo,
-    values::PositionedValue,
+    error::CodecError, settings::ERROR_ON_EXPECTED_EOF, traits::DynInfo, values::PositionedValue,
 };
 mod dynamic;
 mod undeviating; // 'static' is already a keyword
@@ -14,10 +13,7 @@ pub trait DynParserHelper {
     /// Parse json text into [Value]
     /// # Errors
     /// Errors upon invalid/corrupt data
-    fn from_str(
-        &mut self,
-        data: &str,
-    ) -> Result<Option<PositionedValue>, ParsingError>;
+    fn from_str(&mut self, data: &str) -> Result<Option<PositionedValue>, CodecError>;
     /// Skips any whitespace and parses the next element
     ///
     /// # Errors
@@ -27,12 +23,12 @@ pub trait DynParserHelper {
         data: &[char],
         pos: &mut usize,
         value_count: &mut usize,
-    ) -> Result<PositionedValue, ParsingError>;
+    ) -> Result<PositionedValue, CodecError>;
     /// Skips any whitespace and parses the next element
     ///
     /// # Errors
     /// Errors upon invalid/corrupt data
-    fn figure_out_next_type(&mut self, data: &[char], pos: usize) -> ValueType;
+    fn figure_out_next_type(&mut self, data: &[char], pos: usize) -> Result<ValueType, CodecError>;
     #[track_caller]
     /// Parse the given data into the next value
     ///
@@ -44,7 +40,7 @@ pub trait DynParserHelper {
         pos: &mut usize,
         value_type: ValueType,
         value_count: &mut usize,
-    ) -> Result<PositionedValue, ParsingError>;
+    ) -> Result<PositionedValue, CodecError>;
 }
 
 impl<T: DynParser + DynInfo> DynParserHelper for T {
@@ -55,7 +51,7 @@ impl<T: DynParser + DynInfo> DynParserHelper for T {
         pos: &mut usize,
         value_type: ValueType,
         value_count: &mut usize,
-    ) -> Result<PositionedValue, ParsingError> {
+    ) -> Result<PositionedValue, CodecError> {
         match value_type {
             ValueType::Number => self.parse_number(data, pos, value_count),
             ValueType::String => self.parse_string(data, pos, value_count),
@@ -65,41 +61,41 @@ impl<T: DynParser + DynInfo> DynParserHelper for T {
             ValueType::Bool => self.parse_bool(data, pos, value_count),
             ValueType::Invalid => Err({
                 data.get(*pos).map_or_else(
-                    || ParsingError::UnexpectedEOF {
+                    || CodecError::UnexpectedEOF {
                         offset: *pos,
                         origin: Some(ValueType::Invalid),
                         text: data.iter().collect(),
                     },
-                    |c| ParsingError::UnrecognizedType {
+                    |c| CodecError::UnrecognizedType {
                         offset: *pos,
                         starting_char: *c,
                         text: data.iter().collect(),
                     },
                 )
             }),
-            _ => Err(ParsingError::UnsupportedType {
+            _ => Err(CodecError::UnsupportedType {
                 pos: *pos,
                 value_type,
                 text: data.iter().collect(),
             }),
         }
     }
-    fn figure_out_next_type(&mut self, data: &[char], pos: usize) -> ValueType {
-        if self.is_string(data, pos) {
+    fn figure_out_next_type(&mut self, data: &[char], pos: usize) -> Result<ValueType, CodecError> {
+        Ok(if self.is_string(data, pos)? {
             ValueType::String
-        } else if self.is_list(data, pos) {
+        } else if self.is_list(data, pos)? {
             ValueType::Vec
-        } else if self.is_number(data, pos) {
+        } else if self.is_number(data, pos)? {
             ValueType::Number
-        } else if self.is_map(data, pos) {
+        } else if self.is_map(data, pos)? {
             ValueType::Map
-        } else if self.is_bool(data, pos) {
+        } else if self.is_bool(data, pos)? {
             ValueType::Bool
-        } else if self.is_none(data, pos) {
+        } else if self.is_none(data, pos)? {
             ValueType::None
         } else {
             ValueType::Invalid
-        }
+        })
     }
     #[track_caller]
     fn deal_with_data(
@@ -107,15 +103,12 @@ impl<T: DynParser + DynInfo> DynParserHelper for T {
         data: &[char],
         pos: &mut usize,
         value_count: &mut usize,
-    ) -> Result<PositionedValue, ParsingError> {
+    ) -> Result<PositionedValue, CodecError> {
         self.skip_whitespace(data, pos, value_count);
-        let value = self.figure_out_next_type(data, *pos);
+        let value = self.figure_out_next_type(data, *pos)?;
         self.parse_next(data, pos, value, value_count)
     }
-    fn from_str(
-        &mut self,
-        data: &str,
-    ) -> Result<Option<PositionedValue>, ParsingError> {
+    fn from_str(&mut self, data: &str) -> Result<Option<PositionedValue>, CodecError> {
         let chars: Vec<char> = data.chars().collect();
         let mut pos = 0;
         let mut value_count = 0;
@@ -126,11 +119,10 @@ impl<T: DynParser + DynInfo> DynParserHelper for T {
         // } else {
         //     Vec::new()
         // };
-        let val = match self.deal_with_data(&chars, &mut pos, &mut value_count)
-        {
+        let val = match self.deal_with_data(&chars, &mut pos, &mut value_count) {
             Ok(val) => val,
             Err(err) => {
-                if err == ParsingError::EmptyFile {
+                if err == CodecError::EmptyFile {
                     return Ok(None);
                 }
                 Err(err)?
@@ -141,7 +133,7 @@ impl<T: DynParser + DynInfo> DynParserHelper for T {
             let temp_pos = pos;
             self.skip_whitespace(&chars, &mut pos, &mut value_count);
             if chars.len() != pos {
-                return Err(ParsingError::ExpectedEOF {
+                return Err(CodecError::ExpectedEOF {
                     offset: temp_pos,
                     origin: None,
                     text: temp.iter().collect(),
@@ -160,7 +152,7 @@ pub trait StaticParserHelper: StaticParser {
     ///
     /// # Errors
     /// Errors upon invalid/corrupt data
-    fn from_str(data: &str) -> Result<Option<PositionedValue>, ParsingError>;
+    fn from_str(data: &str) -> Result<Option<PositionedValue>, CodecError>;
     /// Skips any whitespace and parses the next element
     ///
     /// # Errors
@@ -169,12 +161,12 @@ pub trait StaticParserHelper: StaticParser {
         data: &[char],
         pos: &mut usize,
         value_count: &mut usize,
-    ) -> Result<PositionedValue, ParsingError>;
+    ) -> Result<PositionedValue, CodecError>;
     /// Skips any whitespace and parses the next element
     ///
     /// # Errors
     /// Errors upon invalid/corrupt data
-    fn figure_out_next_type(data: &[char], pos: usize) -> ValueType;
+    fn figure_out_next_type(data: &[char], pos: usize) -> Result<ValueType, CodecError>;
     #[track_caller]
     /// Parse the given data into the next value
     ///
@@ -185,7 +177,7 @@ pub trait StaticParserHelper: StaticParser {
         pos: &mut usize,
         value_type: ValueType,
         value_count: &mut usize,
-    ) -> Result<PositionedValue, ParsingError>;
+    ) -> Result<PositionedValue, CodecError>;
 }
 
 impl<T: StaticParser> StaticParserHelper for T {
@@ -195,15 +187,10 @@ impl<T: StaticParser> StaticParserHelper for T {
         pos: &mut usize,
         value_type: ValueType,
         value_count: &mut usize,
-    ) -> Result<PositionedValue, ParsingError> {
-        crate::parsers::helper::parse_next::<T>(
-            data,
-            pos,
-            value_type,
-            value_count,
-        )
+    ) -> Result<PositionedValue, CodecError> {
+        crate::parsers::helper::parse_next::<T>(data, pos, value_type, value_count)
     }
-    fn figure_out_next_type(data: &[char], pos: usize) -> ValueType {
+    fn figure_out_next_type(data: &[char], pos: usize) -> Result<ValueType, CodecError> {
         crate::parsers::helper::figure_out_next_type::<T>(data, pos)
     }
     #[track_caller]
@@ -211,12 +198,12 @@ impl<T: StaticParser> StaticParserHelper for T {
         data: &[char],
         pos: &mut usize,
         value_count: &mut usize,
-    ) -> Result<PositionedValue, ParsingError> {
+    ) -> Result<PositionedValue, CodecError> {
         T::skip_whitespace(data, pos, value_count);
-        let value = T::figure_out_next_type(data, *pos);
+        let value = T::figure_out_next_type(data, *pos)?;
         T::parse_next(data, pos, value, value_count)
     }
-    fn from_str(data: &str) -> Result<Option<PositionedValue>, ParsingError> {
+    fn from_str(data: &str) -> Result<Option<PositionedValue>, CodecError> {
         crate::from_str::<T>(data)
     }
 }

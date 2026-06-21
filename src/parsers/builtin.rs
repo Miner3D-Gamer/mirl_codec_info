@@ -1,5 +1,5 @@
 use crate::{
-    error::ParsingError,
+    error::CodecError,
     traits::{DynInfo, DynParser},
     values::PositionedValue,
 };
@@ -15,25 +15,25 @@ pub trait ListCodecParsing {
     fn from_str(
         &mut self,
         data: &str,
-    ) -> Option<Result<Option<PositionedValue>, ParsingError>>;
+    ) -> Option<Result<Option<PositionedValue>, CodecError>>;
     /// Parse the text with the parser that supports the given extension, return None is none support the extension
     fn from_str_with_extension(
         &mut self,
         data: &str,
         extension: &str,
-    ) -> Option<Result<Option<PositionedValue>, ParsingError>>;
+    ) -> Option<Result<Option<PositionedValue>, CodecError>>;
     /// Parse the text with the parser that has the given name, return None if none have the name
     fn from_str_with_name(
         &mut self,
         data: &str,
         name: &str,
-    ) -> Option<Result<Option<PositionedValue>, ParsingError>>;
+    ) -> Option<Result<Option<PositionedValue>, CodecError>>;
 }
 impl ListCodecParsing for [&mut dyn DynParserWithSelfInfo] {
     fn from_str(
         &mut self,
         data: &str,
-    ) -> Option<Result<Option<PositionedValue>, ParsingError>> {
+    ) -> Option<Result<Option<PositionedValue>, CodecError>> {
         for parser in self.iter_mut() {
             let parser_mut: &mut dyn DynParserWithSelfInfo = *parser;
 
@@ -48,7 +48,7 @@ impl ListCodecParsing for [&mut dyn DynParserWithSelfInfo] {
         &mut self,
         data: &str,
         extension: &str,
-    ) -> Option<Result<Option<PositionedValue>, ParsingError>> {
+    ) -> Option<Result<Option<PositionedValue>, CodecError>> {
         for parser in self.iter_mut() {
             let parser_mut: &mut dyn DynParserWithSelfInfo = *parser;
             if parser_mut
@@ -67,7 +67,7 @@ impl ListCodecParsing for [&mut dyn DynParserWithSelfInfo] {
         &mut self,
         data: &str,
         name: &str,
-    ) -> Option<Result<Option<PositionedValue>, ParsingError>> {
+    ) -> Option<Result<Option<PositionedValue>, CodecError>> {
         for parser in self.iter_mut() {
             let parser_mut: &mut dyn DynParserWithSelfInfo = *parser;
             if parser_mut.get_name().as_str() == name {
