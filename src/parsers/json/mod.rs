@@ -1,7 +1,7 @@
 #![allow(clippy::missing_errors_doc)]
 use std::str::FromStr;
 
-use mirl_core::misc::hex_to_number;
+use mirl_graphics::misc::hex_to_number;
 use mirl_extensions::*;
 use mirl_values::{
     prelude::*,

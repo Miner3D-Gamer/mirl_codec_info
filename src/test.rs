@@ -1,5 +1,7 @@
 #![allow(dead_code)]
 #![allow(clippy::trivially_copy_pass_by_ref)]
+#![allow(clippy::panic)]
+#![allow(clippy::missing_panics_doc)]
 
 // #[test]
 // fn caller() {
@@ -18,14 +20,16 @@
 // }
 
 use crate::{prelude::*, values::PositionedValue};
-
-fn main() {
+#[test]
+/// Test the codecs
+pub fn main() {
     println!("Testing {}", DefaultJson::NAME);
     // simple_test_json();
     full_test_json();
 }
+/// Make a full json test
 #[allow(clippy::too_many_lines)]
-fn full_test_json() {
+pub fn full_test_json() {
     use rayon::{ThreadPoolBuilder, prelude::*};
 
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -184,15 +188,17 @@ fn full_test_json() {
 pub struct TestResult {
     /// Path of the test
     pub path: String,
-    /// If an error occured
+    /// If an error occurred
     pub is_error: bool,
     /// Info
     pub message: String,
     /// The resulting value
     pub value: PositionedValue,
 }
-
-fn simple_test_json() {
+/// Test simple json cases
+#[allow(clippy::panic)]
+#[allow(clippy::missing_panics_doc)]
+pub fn simple_test_json() {
     fn get_id(name: &str) -> usize {
         let id: Vec<&str> = name.split('_').collect();
         id.first()
@@ -230,8 +236,9 @@ fn simple_test_json() {
         );
     }
 }
-
-fn test_parse_json(file: &str, name: Option<&str>) -> Option<PositionedValue> {
+#[must_use]
+/// Test the json parser on a single test
+pub fn test_parse_json(file: &str, name: Option<&str>) -> Option<PositionedValue> {
     let value = crate::from_str::<DefaultJson>(file);
 
     match value {
@@ -247,13 +254,15 @@ fn test_parse_json(file: &str, name: Option<&str>) -> Option<PositionedValue> {
         ),
     }
 }
-
-fn test_marshal<T: StaticCompactMarshal>(file: &PositionedValue, _name: &str) -> String {
+#[must_use]
+/// Marshal the value back into text
+pub fn test_marshal<T: StaticCompactMarshal>(file: &PositionedValue, _name: &str) -> String {
     T::to_compact_string(file, 0).unwrap()
 }
-
+#[must_use]
+/// Decode the file bytes into valid utf-8 if it isn't
 #[allow(clippy::similar_names)]
-fn decode_file_bytes(bytes: &[u8]) -> String {
+pub fn decode_file_bytes(bytes: &[u8]) -> String {
     // Check for UTF-8 BOM first
     if bytes.starts_with(&[0xEF, 0xBB, 0xBF])
         && let Ok(s) = std::str::from_utf8(&bytes[3..])
@@ -294,8 +303,9 @@ fn decode_file_bytes(bytes: &[u8]) -> String {
     // Last resort: lossy UTF-8
     String::from_utf8_lossy(bytes).to_string()
 }
-
-fn decode_utf16_lossy(bytes: &[u8], big_endian: bool) -> String {
+#[must_use]
+/// Decode utf-16
+pub fn decode_utf16_lossy(bytes: &[u8], big_endian: bool) -> String {
     String::from_utf16_lossy(
         &bytes
             .chunks_exact(2)
@@ -309,8 +319,9 @@ fn decode_utf16_lossy(bytes: &[u8], big_endian: bool) -> String {
             .collect::<Vec<_>>(),
     )
 }
-
-fn decode_utf16_with_count(bytes: &[u8], big_endian: bool) -> (String, usize) {
+#[must_use]
+/// Decode utf-16 and count the characters
+pub fn decode_utf16_with_count(bytes: &[u8], big_endian: bool) -> (String, usize) {
     let utf16_units: Vec<u16> = bytes
         .chunks_exact(2)
         .map(|c| {

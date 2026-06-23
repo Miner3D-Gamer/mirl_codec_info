@@ -1,4 +1,4 @@
-use mirl_core::text::multi_replace_non_overlapping;
+use mirl_std_exposed::str::multi_replace_non_overlapping;
 use mirl_extensions::{InnerCodecValue, IntoPatch};
 use mirl_values::values::Value;
 

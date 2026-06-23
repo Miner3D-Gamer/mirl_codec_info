@@ -1,4 +1,4 @@
-use mirl_core::text::position::line_and_column_from_offset;
+use mirl_geometry_core::text_position::line_and_column_from_offset;
 use mirl_values::values::ValueType;
 
 impl std::error::Error for CodecError {}
