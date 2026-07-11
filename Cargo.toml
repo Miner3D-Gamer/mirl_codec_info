@@ -17,23 +17,19 @@ authors.workspace = true
 default = []
 all = ["all_codecs"]
 # preserve_entries = ["dep:indexmap", "mirl_values/preserve_entries"]
-
 # Does nothing by itself. Needs another codec or enum flag to do something
 mirl_derive = ["dep:mirl_derive"]
 # Compatibility with ffi
 c_compatible = ["mirl_derive"]
 # Enables all codecs
 all_codecs = ["serde", "bitcode", "wincode", "compactly", "zerocopy"]
-# # All enum extensions
-# all_enum_extensions = ["strum", "enum_ext"]
-
+# # All enum extensions# all_enum_extensions = ["strum", "enum_ext"]
 # Codec stuff
 serde = ["dep:serde", "mirl_derive", "mirl_values/serde"]
 bitcode = ["dep:bitcode", "mirl_derive", "mirl_values/bitcode"]
 wincode = ["dep:wincode", "mirl_derive", "mirl_values/wincode"]
 compactly = ["dep:compactly", "mirl_derive", "mirl_values/compactly"]
 zerocopy = ["dep:zerocopy", "mirl_derive", "mirl_values/zerocopy"]
-
 serde_json = ["dep:serde_json", "mirl_values/serde_json"]
 
 [dependencies]
@@ -42,17 +38,15 @@ bitcode = { version = "0.6", optional = true, default-features = false, features
 ] }
 # Codec
 compactly = { version = "0.1", optional = true }
-
 indexmap = { version = "2.14", optional = true }
 # strum = { version = ">=0.26", optional = true, features = ["derive"] }
-
 mirl_derive = { version = "0.0.0-alpha", optional = true }
 mirl_extensions = { version = "0.0.0-alpha" }
 mirl_geometry_core = { version = "0.0.0-alpha" }
 mirl_graphics = { version = "0.0.0-alpha" }
 mirl_std_exposed = { version = "0.0.0-alpha" }
 mirl_values = { version = "0.0.0-alpha" }
-serde = { version = "1", optional = true, default-features = false, features = [
+serde = { version = "1.0", optional = true, default-features = false, features = [
     "derive",
 ] }
 serde_json = { version = "1.0", optional = true }
