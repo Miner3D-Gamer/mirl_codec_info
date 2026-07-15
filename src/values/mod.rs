@@ -122,8 +122,7 @@ impl CodecContainerSubValueInto for PositionedValue {
     type InnerValue = PositionedValueInner;
     fn into_container(
         self,
-    ) -> Option<ContainerValue<<Self::InnerValue as InnerCodecValue>::Inner>>
-    {
+    ) -> Option<ContainerValue<<Self::InnerValue as InnerCodecValue>::Inner>> {
         self.value.into_container()
     }
 }
@@ -332,34 +331,32 @@ impl PositionedValue {
         }
         match (me, other) {
             (Value::Simple(val), Value::Simple(val2)) => val.eq(val2),
-            (Value::Container(val), Value::Container(val2)) => {
-                match (val, val2) {
-                    (ContainerValue::Map(m), ContainerValue::Map(m2)) => {
-                        for (k, v1) in m.iter() {
-                            let Some(v2) = m2.get(k) else {
-                                return false;
-                            };
-                            if !v1.is_value_eq(v2) {
-                                return false;
-                            }
-                        }
-                        true
-                    }
-                    (ContainerValue::Vec(v), ContainerValue::Vec(v2)) => {
-                        if v.len() != v2.len() {
+            (Value::Container(val), Value::Container(val2)) => match (val, val2) {
+                (ContainerValue::Map(m), ContainerValue::Map(m2)) => {
+                    for (k, v1) in m.iter() {
+                        let Some(v2) = m2.get(k) else {
+                            return false;
+                        };
+                        if !v1.is_value_eq(v2) {
                             return false;
                         }
-                        for (idx, val1) in v.iter().enumerate() {
-                            let val2 = unsafe { v2.get_unchecked(idx) };
-                            if !val1.is_value_eq(val2) {
-                                return false;
-                            }
-                        }
-                        true
                     }
-                    _ => unsafe { unreachable_unchecked() },
+                    true
                 }
-            }
+                (ContainerValue::Vec(v), ContainerValue::Vec(v2)) => {
+                    if v.len() != v2.len() {
+                        return false;
+                    }
+                    for (idx, val1) in v.iter().enumerate() {
+                        let val2 = unsafe { v2.get_unchecked(idx) };
+                        if !val1.is_value_eq(val2) {
+                            return false;
+                        }
+                    }
+                    true
+                }
+                _ => unsafe { unreachable_unchecked() },
+            },
             _ => unsafe { unreachable_unchecked() },
         }
     }

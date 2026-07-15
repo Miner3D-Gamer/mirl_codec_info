@@ -17,8 +17,7 @@ pub const WHITESPACE_CHARACTERS: &[char] = &[' ', '\t', '\r', '\n', '\u{feff}'];
 /// What denotes the start and end of a string
 pub const STRING_INDICATOR: &[char] = &['"', '\''];
 /// What character make sense to escape
-pub const ALLOWED_ESCAPED: &[char] =
-    &['\\', '"', 'u', 'n', 't', 'r', '/', 'b', 'f'];
+pub const ALLOWED_ESCAPED: &[char] = &['\\', '"', 'u', 'n', 't', 'r', '/', 'b', 'f'];
 /// The keyword used for None
 pub const NONE_KEYWORD: &str = "null";
 /// The keyword used for true
@@ -46,12 +45,10 @@ pub const ALLOW_NULL_CHARACTER: bool = false;
 /// If all control characters like \u0001 must be escaped
 pub const CONTROL_CHARACTER_MUST_BE_ESCAPED: bool = true;
 /// All number chars
-pub const NUMBER_CHARS: &[char] =
-    &['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+pub const NUMBER_CHARS: &[char] = &['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
 /// What characters are allowed to end an element like a number
-pub const ALLOWED_ELEMENT_INTERRUPTIONS: &[char] =
-    &[LIST_END, MAP_END, ELEMENT_SEPARATOR, ' '];
+pub const ALLOWED_ELEMENT_INTERRUPTIONS: &[char] = &[LIST_END, MAP_END, ELEMENT_SEPARATOR, ' '];
 
 /// If [100 "hi"] should be fixed to [100, "hi"] and {"first" "second" "third" "fourth"} to {"first": "second", "third": "fourth"}
 pub const AUTOMATIC_SEPARATOR_INSERTION: bool = false;

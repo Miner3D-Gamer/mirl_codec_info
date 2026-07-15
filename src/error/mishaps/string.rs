@@ -35,12 +35,8 @@ impl std::fmt::Display for ParserStringMishap {
             Self::WrongQuotation => "Another quotation type was expected",
             Self::InvalidUnicodeSequence => "Invalid unicode sequence",
             Self::NullCharacter => "Null character is not allowed",
-            Self::EscapedInvalidCharacter => {
-                "Escaping this character does not make sense"
-            }
-            Self::UnescapedControlCharacter => {
-                "Control characters must be escaped"
-            }
+            Self::EscapedInvalidCharacter => "Escaping this character does not make sense",
+            Self::UnescapedControlCharacter => "Control characters must be escaped",
             Self::Other => "Unknown",
         };
         write!(f, "{message}")

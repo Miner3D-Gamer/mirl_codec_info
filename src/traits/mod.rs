@@ -15,8 +15,8 @@ pub trait StaticCompactCodec<W: InnerCodecValue>:
 {
 }
 
-impl<T: StaticParser + StaticCompactMarshal + StaticInfo, W: InnerCodecValue>
-    StaticCompactCodec<W> for T
+impl<T: StaticParser + StaticCompactMarshal + StaticInfo, W: InnerCodecValue> StaticCompactCodec<W>
+    for T
 {
 }
 
@@ -25,15 +25,9 @@ impl<T: StaticParser + StaticCompactMarshal + StaticInfo, W: InnerCodecValue>
 /// This is a static implementation for dynamic parsing/marshaling
 ///
 /// When Marshaling, will try to produce the smallest output possible
-pub trait DynCompactCodec<W: InnerCodecValue>:
-    DynParser + DynCompactMarshal<W> + DynInfo
-{
-}
+pub trait DynCompactCodec<W: InnerCodecValue>: DynParser + DynCompactMarshal<W> + DynInfo {}
 
-impl<T: DynParser + DynCompactMarshal<W> + DynInfo, W: InnerCodecValue>
-    DynCompactCodec<W> for T
-{
-}
+impl<T: DynParser + DynCompactMarshal<W> + DynInfo, W: InnerCodecValue> DynCompactCodec<W> for T {}
 
 /// When a struct can Parse and Marshal it is considered a codec
 ///
@@ -55,15 +49,9 @@ impl<T: StaticParser + StaticCompactMarshal + StaticInfo, W: InnerCodecValue>
 /// This is a static implementation for dynamic parsing/marshaling
 ///
 /// When Marshaling, will try to produce a formatted (often human readable) output
-pub trait DynFormattedCodec<W: InnerCodecValue>:
-    DynParser + DynFormattedMarshal + DynInfo
-{
-}
+pub trait DynFormattedCodec<W: InnerCodecValue>: DynParser + DynFormattedMarshal + DynInfo {}
 
-impl<T: DynParser + DynFormattedMarshal + DynInfo, W: InnerCodecValue>
-    DynFormattedCodec<W> for T
-{
-}
+impl<T: DynParser + DynFormattedMarshal + DynInfo, W: InnerCodecValue> DynFormattedCodec<W> for T {}
 
 // mod compatibility;
 // pub use compatibility::*;

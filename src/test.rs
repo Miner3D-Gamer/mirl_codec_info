@@ -308,7 +308,9 @@ pub fn decode_file_bytes(bytes: &[u8]) -> String {
 pub fn decode_utf16_lossy(bytes: &[u8], big_endian: bool) -> String {
     String::from_utf16_lossy(
         &bytes
-            .chunks_exact(2)
+            .as_chunks::<2>()
+            .0
+            .iter()
             .map(|c| {
                 if big_endian {
                     u16::from_be_bytes([c[0], c[1]])
@@ -323,7 +325,9 @@ pub fn decode_utf16_lossy(bytes: &[u8], big_endian: bool) -> String {
 /// Decode utf-16 and count the characters
 pub fn decode_utf16_with_count(bytes: &[u8], big_endian: bool) -> (String, usize) {
     let utf16_units: Vec<u16> = bytes
-        .chunks_exact(2)
+        .as_chunks::<2>()
+        .0
+        .iter()
         .map(|c| {
             if big_endian {
                 u16::from_be_bytes([c[0], c[1]])

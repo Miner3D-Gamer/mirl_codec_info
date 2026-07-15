@@ -7,9 +7,7 @@ impl TryFromPatch<PositionedValue> for std::string::String {
         value.into_string()
     }
 }
-impl<T: TryFromPatch<PositionedValue>> TryFromPatch<PositionedValue>
-    for Vec<T>
-{
+impl<T: TryFromPatch<PositionedValue>> TryFromPatch<PositionedValue> for Vec<T> {
     fn try_from_value(value: PositionedValue) -> Option<Self> {
         value.into_vec().and_then(|list| {
             list.iter()

@@ -17,10 +17,7 @@ pub trait StaticFormattedMarshal {
     ///
     /// # Errors
     /// [`MarshalError`]
-    fn to_formatted_string(
-        value: &PositionedValue,
-        depth: usize,
-    ) -> Result<String, MarshalError>;
+    fn to_formatted_string(value: &PositionedValue, depth: usize) -> Result<String, MarshalError>;
 }
 /// Convert individual types to string
 ///
@@ -84,13 +81,10 @@ pub trait StaticFormattedMarshalBase<W: InnerCodecValue> {
     ) -> Result<String, MarshalError>;
 }
 
-impl<T: StaticFormattedMarshalBase<PositionedValueInner> + AutoImplFormatted>
-    StaticFormattedMarshal for T
+impl<T: StaticFormattedMarshalBase<PositionedValueInner> + AutoImplFormatted> StaticFormattedMarshal
+    for T
 {
-    fn to_formatted_string(
-        value: &PositionedValue,
-        depth: usize,
-    ) -> Result<String, MarshalError> {
+    fn to_formatted_string(value: &PositionedValue, depth: usize) -> Result<String, MarshalError> {
         let depth = depth + 1;
         match &value.value {
             Value::Simple(simple) => match simple {
@@ -100,30 +94,22 @@ impl<T: StaticFormattedMarshalBase<PositionedValueInner> + AutoImplFormatted>
                     depth,
                     value.get_position(),
                 ),
-                SimpleValue::Bool(input) => T::marshal_formatted_bool(
-                    *input,
-                    depth,
-                    value.get_position(),
-                ),
-                SimpleValue::None => {
-                    T::marshal_formatted_none(depth, value.get_position())
+                SimpleValue::Bool(input) => {
+                    T::marshal_formatted_bool(*input, depth, value.get_position())
                 }
-                SimpleValue::Number(input) => T::marshal_formatted_number(
-                    input,
-                    depth,
-                    value.get_position(),
-                ),
+                SimpleValue::None => T::marshal_formatted_none(depth, value.get_position()),
+                SimpleValue::Number(input) => {
+                    T::marshal_formatted_number(input, depth, value.get_position())
+                }
                 _ => Err(MarshalError::UnsupportedType {
                     value_type: value.get_value_type(),
                     id: value.item_id,
                 }),
             },
             Value::Container(container) => match container {
-                ContainerValue::Vec(input) => T::marshal_formatted_array(
-                    input,
-                    depth,
-                    value.get_position(),
-                ),
+                ContainerValue::Vec(input) => {
+                    T::marshal_formatted_array(input, depth, value.get_position())
+                }
                 ContainerValue::Map(input) => {
                     T::marshal_formatted_map(input, depth, value.get_position())
                 }

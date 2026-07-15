@@ -76,7 +76,7 @@ pub fn parse_next<T: StaticParser>(
 }
 
 /// Try to determine the next type
-/// 
+///
 /// # Errors
 /// When a value is misshaped or an unexpected EOF is reached
 pub fn figure_out_next_type<T: StaticParser>(

@@ -54,11 +54,8 @@ pub trait DynCompactMarshalBase<W: InnerCodecValue> {
     ///
     /// # Errors
     /// [`MarshalError`]
-    fn marshal_compact_string(
-        &mut self,
-        input: &str,
-        depth: usize,
-    ) -> Result<String, MarshalError>;
+    fn marshal_compact_string(&mut self, input: &str, depth: usize)
+    -> Result<String, MarshalError>;
     /// Convert the given number into a string of the correct formatting
     ///
     /// # Errors
@@ -81,19 +78,12 @@ pub trait DynCompactMarshalBase<W: InnerCodecValue> {
     ///
     /// # Errors
     /// [`MarshalError`]
-    fn marshal_compact_bool(
-        &mut self,
-        input: bool,
-        depth: usize,
-    ) -> Result<String, MarshalError>;
+    fn marshal_compact_bool(&mut self, input: bool, depth: usize) -> Result<String, MarshalError>;
     /// Get the None equivalent of the current formatting
     ///
     /// # Errors
     /// [`MarshalError`]
-    fn marshal_compact_none(
-        &mut self,
-        depth: usize,
-    ) -> Result<String, MarshalError>;
+    fn marshal_compact_none(&mut self, depth: usize) -> Result<String, MarshalError>;
     /// Convert the given map into a string of the correct formatting
     ///
     /// # Errors
@@ -105,9 +95,7 @@ pub trait DynCompactMarshalBase<W: InnerCodecValue> {
     ) -> Result<String, MarshalError>;
 }
 
-impl<T: StaticCompactMarshalBase<W>, W: InnerCodecValue>
-    DynCompactMarshalBase<W> for T
-{
+impl<T: StaticCompactMarshalBase<W>, W: InnerCodecValue> DynCompactMarshalBase<W> for T {
     fn marshal_compact_string(
         &mut self,
         input: &str,
@@ -132,18 +120,11 @@ impl<T: StaticCompactMarshalBase<W>, W: InnerCodecValue>
         T::marshal_compact_array(input, depth)
     }
 
-    fn marshal_compact_bool(
-        &mut self,
-        input: bool,
-        depth: usize,
-    ) -> Result<String, MarshalError> {
+    fn marshal_compact_bool(&mut self, input: bool, depth: usize) -> Result<String, MarshalError> {
         T::marshal_compact_bool(input, depth)
     }
 
-    fn marshal_compact_none(
-        &mut self,
-        depth: usize,
-    ) -> Result<String, MarshalError> {
+    fn marshal_compact_none(&mut self, depth: usize) -> Result<String, MarshalError> {
         T::marshal_compact_none(depth)
     }
 
@@ -156,9 +137,7 @@ impl<T: StaticCompactMarshalBase<W>, W: InnerCodecValue>
     }
 }
 
-impl<T: DynCompactMarshalBase<PositionedValueInner>>
-    DynCompactMarshal<PositionedValueInner> for T
-{
+impl<T: DynCompactMarshalBase<PositionedValueInner>> DynCompactMarshal<PositionedValueInner> for T {
     fn to_compact_string(
         &mut self,
         value: &PositionedValue,
@@ -166,29 +145,20 @@ impl<T: DynCompactMarshalBase<PositionedValueInner>>
     ) -> Result<String, MarshalError> {
         match &value.value {
             Value::Simple(simple) => match &simple {
-                SimpleValue::String(input) => self.marshal_compact_string(
-                    &input.escape_debug().to_string(),
-                    depth,
-                ),
-                SimpleValue::Bool(input) => {
-                    self.marshal_compact_bool(*input, depth)
+                SimpleValue::String(input) => {
+                    self.marshal_compact_string(&input.escape_debug().to_string(), depth)
                 }
+                SimpleValue::Bool(input) => self.marshal_compact_bool(*input, depth),
                 SimpleValue::None => self.marshal_compact_none(depth),
-                SimpleValue::Number(input) => {
-                    self.marshal_compact_number(input, depth)
-                }
+                SimpleValue::Number(input) => self.marshal_compact_number(input, depth),
                 _ => Err(MarshalError::UnsupportedType {
                     value_type: value.get_value_type(),
                     id: value.item_id,
                 }),
             },
             Value::Container(container) => match &container {
-                ContainerValue::Map(input) => {
-                    self.marshal_compact_map(input, depth)
-                }
-                ContainerValue::Vec(input) => {
-                    self.marshal_compact_vec(input, depth)
-                }
+                ContainerValue::Map(input) => self.marshal_compact_map(input, depth),
+                ContainerValue::Vec(input) => self.marshal_compact_vec(input, depth),
             },
         }
     }

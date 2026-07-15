@@ -42,17 +42,11 @@ impl std::fmt::Display for ParserNumberMishap {
             Self::ExponentWithoutBase => "Exponent requires a base number",
             Self::FloatWithoutInt => "Float is missing a integer",
             Self::IncompleteFloat => "Expected decimals after dot",
-            Self::IncompleteScientificNotation => {
-                "Expected number after scientific notation"
-            }
-            Self::LeadingZeros => {
-                "A value of '01' is invalid because it simplifies to '1'"
-            }
+            Self::IncompleteScientificNotation => "Expected number after scientific notation",
+            Self::LeadingZeros => "A value of '01' is invalid because it simplifies to '1'",
             Self::MultipleDots => "A float cannot have 2 dots",
             Self::RangeNotAllowed => "You cannot define a range as a number",
-            Self::NumberContainsNonNumber => {
-                "Number mustn't contain non numbers"
-            }
+            Self::NumberContainsNonNumber => "Number mustn't contain non numbers",
             Self::NumberWithoutNumber => "Number must contain a number",
             Self::Other => "Unknown",
         };

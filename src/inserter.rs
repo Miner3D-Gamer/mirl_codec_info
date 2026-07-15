@@ -1,5 +1,5 @@
-use mirl_std_exposed::str::multi_replace_non_overlapping;
 use mirl_extensions::{InnerCodecValue, IntoPatch};
+use mirl_std_exposed::str::multi_replace_non_overlapping;
 use mirl_values::values::Value;
 
 use crate::{
@@ -28,9 +28,7 @@ impl<W: InnerCodecValue> Inserter<W> {
     /// Safety:
     /// We give all keys a prefix and suffix.
     /// It is possible for this to UB when a key contains another key and includes both the pre- and suffix
-    pub fn insert_into_chat_compact<T: StaticCompactMarshal>(
-        &self,
-    ) -> Result<String, MarshalError>
+    pub fn insert_into_chat_compact<T: StaticCompactMarshal>(&self) -> Result<String, MarshalError>
     where
         <W as mirl_extensions::InnerCodecValue>::Inner: IntoPatch<Value<W>>,
     {
@@ -38,14 +36,10 @@ impl<W: InnerCodecValue> Inserter<W> {
         for (key, val) in &self.values {
             stuff.push((
                 format!("{{${key}}}"),
-                T::to_compact_string(
-                    &PositionedValue::positional_from_value(val.clone()),
-                    0,
-                )?,
+                T::to_compact_string(&PositionedValue::positional_from_value(val.clone()), 0)?,
             ));
         }
-        let output =
-            unsafe { multi_replace_non_overlapping(&self.file, &stuff) };
+        let output = unsafe { multi_replace_non_overlapping(&self.file, &stuff) };
         Ok(output)
     }
 }

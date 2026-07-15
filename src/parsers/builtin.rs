@@ -12,10 +12,7 @@ impl<T: DynParser + DynInfo> DynParserWithSelfInfo for T {}
 /// Parse a piece of text using a list of parsers
 pub trait ListCodecParsing {
     /// Iterate through all parsers and parse with the one that doesn't error, otherwise return None
-    fn from_str(
-        &mut self,
-        data: &str,
-    ) -> Option<Result<Option<PositionedValue>, CodecError>>;
+    fn from_str(&mut self, data: &str) -> Option<Result<Option<PositionedValue>, CodecError>>;
     /// Parse the text with the parser that supports the given extension, return None is none support the extension
     fn from_str_with_extension(
         &mut self,
@@ -30,10 +27,7 @@ pub trait ListCodecParsing {
     ) -> Option<Result<Option<PositionedValue>, CodecError>>;
 }
 impl ListCodecParsing for [&mut dyn DynParserWithSelfInfo] {
-    fn from_str(
-        &mut self,
-        data: &str,
-    ) -> Option<Result<Option<PositionedValue>, CodecError>> {
+    fn from_str(&mut self, data: &str) -> Option<Result<Option<PositionedValue>, CodecError>> {
         for parser in self.iter_mut() {
             let parser_mut: &mut dyn DynParserWithSelfInfo = *parser;
 

@@ -15,21 +15,73 @@ authors.workspace = true
 [features]
 #default = ["serde", "strum"]
 default = []
-all = ["all_codecs"]
+all = ["all_codecs", "mirl_extensions/all", "mirl_graphics/all", "mirl_values/all"]
 # preserve_entries = ["dep:indexmap", "mirl_values/preserve_entries"]
 # Does nothing by itself. Needs another codec or enum flag to do something
-mirl_derive = ["dep:mirl_derive"]
+mirl_derive = [
+    "dep:mirl_derive",
+    "mirl_geometry_core/mirl_derive",
+    "mirl_graphics/mirl_derive",
+    "mirl_values/mirl_derive",
+]
 # Compatibility with ffi
-c_compatible = ["mirl_derive"]
+c_compatible = [
+    "mirl_derive",
+    "mirl_extensions/c_compatible",
+    "mirl_geometry_core/c_compatible",
+    "mirl_graphics/c_compatible",
+    "mirl_values/c_compatible",
+]
 # Enables all codecs
-all_codecs = ["serde", "bitcode", "wincode", "compactly", "zerocopy"]
+all_codecs = [
+    "dep:serde",
+    "dep:bitcode",
+    "dep:wincode",
+    "dep:compactly",
+    "dep:zerocopy",
+    "mirl_geometry_core/all_codecs",
+    "mirl_graphics/all_codecs",
+    "mirl_values/all_codecs",
+]
 # # All enum extensions# all_enum_extensions = ["strum", "enum_ext"]
 # Codec stuff
-serde = ["dep:serde", "mirl_derive", "mirl_values/serde"]
-bitcode = ["dep:bitcode", "mirl_derive", "mirl_values/bitcode"]
-wincode = ["dep:wincode", "mirl_derive", "mirl_values/wincode"]
-compactly = ["dep:compactly", "mirl_derive", "mirl_values/compactly"]
-zerocopy = ["dep:zerocopy", "mirl_derive", "mirl_values/zerocopy"]
+serde = [
+    "dep:serde",
+    "mirl_derive",
+    "mirl_values/serde",
+    "bitcode?/serde",
+    # "indexmap?/serde",
+    "mirl_geometry_core/serde",
+    "mirl_graphics/serde",
+]
+bitcode = [
+    "dep:bitcode",
+    "mirl_derive",
+    "mirl_values/bitcode",
+    "mirl_geometry_core/bitcode",
+    "mirl_graphics/bitcode",
+]
+wincode = [
+    "dep:wincode",
+    "mirl_derive",
+    "mirl_values/wincode",
+    "mirl_geometry_core/wincode",
+    "mirl_graphics/wincode",
+]
+compactly = [
+    "dep:compactly",
+    "mirl_derive",
+    "mirl_values/compactly",
+    "mirl_geometry_core/compactly",
+    "mirl_graphics/compactly",
+]
+zerocopy = [
+    "dep:zerocopy",
+    "mirl_derive",
+    "mirl_values/zerocopy",
+    "mirl_geometry_core/zerocopy",
+    "mirl_graphics/zerocopy",
+]
 serde_json = ["dep:serde_json", "mirl_values/serde_json"]
 
 [dependencies]
@@ -38,7 +90,7 @@ bitcode = { version = "0.6", optional = true, default-features = false, features
 ] }
 # Codec
 compactly = { version = "0.1", optional = true }
-indexmap = { version = "2.14", optional = true }
+# indexmap = { version = "2.14", optional = true }
 # strum = { version = ">=0.26", optional = true, features = ["derive"] }
 mirl_derive = { version = "0.0.0-alpha", optional = true }
 mirl_extensions = { version = "0.0.0-alpha" }
@@ -63,6 +115,6 @@ zerocopy = { version = "0.8", optional = true, default-features = false, feature
 mirl_build_tools = { workspace = true }
 
 [dev-dependencies]
-num_cpus = "1.16"
+num_cpus = "1.17"
 # strum = true
-rayon = "1.7"
+rayon = "1.12"

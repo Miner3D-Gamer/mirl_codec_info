@@ -2,7 +2,15 @@
 use mirl_values::prelude::*;
 
 use crate::{
-    PositionRange, error::CodecError, parsers::{helper::{deal_with_data, skip_whitespace}, json::get_char}, settings::MapType, traits::{StaticInfo, StaticParserDetect, StaticParserParse}, values::PositionedValue
+    PositionRange,
+    error::CodecError,
+    parsers::{
+        helper::{deal_with_data, skip_whitespace},
+        json::get_char,
+    },
+    settings::MapType,
+    traits::{StaticInfo, StaticParserDetect, StaticParserParse},
+    values::PositionedValue,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default, Hash)]

@@ -8,91 +8,91 @@ use crate::{
 /// Detection half of [`DynParser`] — only looks at the data, never mutates position
 pub trait DynParserDetect {
     /// If the next value is a number
-    /// 
+    ///
     /// # Errors
     /// Check if the given value is of this type
     fn is_number(&mut self, data: &[char], pos: usize) -> Result<bool, CodecError> {
         Ok(false)
     }
     /// If the next value is a string
-    /// 
+    ///
     /// # Errors
     /// Check if the given value is of this type
     fn is_string(&mut self, data: &[char], pos: usize) -> Result<bool, CodecError> {
         Ok(false)
     }
     /// If the next value is a list
-    /// 
+    ///
     /// # Errors
     /// Check if the given value is of this type
     fn is_list(&mut self, data: &[char], pos: usize) -> Result<bool, CodecError> {
         Ok(false)
     }
     /// If the next value is a map
-    /// 
+    ///
     /// # Errors
     /// Check if the given value is of this type
     fn is_map(&mut self, data: &[char], pos: usize) -> Result<bool, CodecError> {
         Ok(false)
     }
     /// If the next value is none
-    /// 
+    ///
     /// # Errors
     /// Check if the given value is of this type
     fn is_none(&mut self, data: &[char], pos: usize) -> Result<bool, CodecError> {
         Ok(false)
     }
     /// If the next value is a bool
-    /// 
+    ///
     /// # Errors
     /// Check if the given value is of this type
     fn is_bool(&mut self, data: &[char], pos: usize) -> Result<bool, CodecError> {
         Ok(false)
     }
     /// If the next value is a time
-    /// 
+    ///
     /// # Errors
     /// Check if the given value is of this type
     fn is_time(&mut self, data: &[char], pos: usize) -> Result<bool, CodecError> {
         Ok(false)
     }
     /// If the next value is a datetime
-    /// 
+    ///
     /// # Errors
     /// Check if the given value is of this type
     fn is_datetime(&mut self, data: &[char], pos: usize) -> Result<bool, CodecError> {
         Ok(false)
     }
     /// If the next value is an angle
-    /// 
+    ///
     /// # Errors
     /// Check if the given value is of this type
     fn is_angle(&mut self, data: &[char], pos: usize) -> Result<bool, CodecError> {
         Ok(false)
     }
     /// If the next value is a literal
-    /// 
+    ///
     /// # Errors
     /// Check if the given value is of this type
     fn is_literal(&mut self, data: &[char], pos: usize) -> Result<bool, CodecError> {
         Ok(false)
     }
     /// If the next value is a length
-    /// 
+    ///
     /// # Errors
     /// Check if the given value is of this type
     fn is_length(&mut self, data: &[char], pos: usize) -> Result<bool, CodecError> {
         Ok(false)
     }
     /// If the next value is a color
-    /// 
+    ///
     /// # Errors
     /// Check if the given value is of this type
     fn is_color(&mut self, data: &[char], pos: usize) -> Result<bool, CodecError> {
         Ok(false)
     }
     /// If the next value is bytes
-    /// 
+    ///
     /// # Errors
     /// Check if the given value is of this type
     fn is_bytes(&mut self, data: &[char], pos: usize) -> Result<bool, CodecError> {

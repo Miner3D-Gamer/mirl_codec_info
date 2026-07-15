@@ -92,10 +92,7 @@ pub mod prelude;
 use crate::{
     error::CodecError,
     settings::*,
-    traits::{
-        MarshalError, StaticCompactMarshal, StaticFormattedMarshal,
-        StaticParser,
-    },
+    traits::{MarshalError, StaticCompactMarshal, StaticFormattedMarshal, StaticParser},
     values::PositionedValue,
 };
 /// Parsers of supported languages
@@ -109,9 +106,7 @@ pub mod inserter;
 ///
 /// # Errors
 /// Errors upon invalid/corrupt data
-pub fn json_from_str(
-    data: &str,
-) -> Result<Option<PositionedValue>, CodecError> {
+pub fn json_from_str(data: &str) -> Result<Option<PositionedValue>, CodecError> {
     from_str::<parsers::DefaultJson>(data)
 }
 
@@ -121,9 +116,7 @@ pub fn json_from_str(
 ///
 /// # Errors
 /// Errors upon invalid/corrupt data
-pub fn from_str<T: StaticParser>(
-    data: &str,
-) -> Result<Option<PositionedValue>, CodecError> {
+pub fn from_str<T: StaticParser>(data: &str) -> Result<Option<PositionedValue>, CodecError> {
     let chars: Vec<char> = data.chars().collect();
     let mut pos = 0;
     let mut value_count = 0;
@@ -137,11 +130,7 @@ pub fn from_str<T: StaticParser>(
 
     // println!("After purge: {}", chars.iter().collect::<String>());
 
-    let val = match parsers::helper::deal_with_data::<T>(
-        &chars,
-        &mut pos,
-        &mut value_count,
-    ) {
+    let val = match parsers::helper::deal_with_data::<T>(&chars, &mut pos, &mut value_count) {
         Ok(val) => val,
         Err(err) => {
             if err == CodecError::EmptyFile {

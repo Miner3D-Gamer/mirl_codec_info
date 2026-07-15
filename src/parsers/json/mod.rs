@@ -1,8 +1,8 @@
 #![allow(clippy::missing_errors_doc)]
 use std::str::FromStr;
 
-use mirl_graphics::misc::hex_to_number;
 use mirl_extensions::*;
+use mirl_graphics::misc::hex_to_number;
 use mirl_values::{
     prelude::*,
     values::{ContainerValue, Number, Value},
@@ -169,7 +169,6 @@ impl StaticCompactMarshalBase<PositionedValueInner> for DefaultJson {
         Ok(format!("{{{output}}}"))
     }
 }
-
 
 /// Checks if the char is a number, -, or .
 pub fn is_number(data: &[char], pos: usize) -> Result<bool, CodecError> {
